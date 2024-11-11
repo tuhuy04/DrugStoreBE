@@ -17,5 +17,5 @@ const createNew = async (req, res, next) => {
 };
 
 export const boardsValidation = {
-  createNew,
+  createNew
 };

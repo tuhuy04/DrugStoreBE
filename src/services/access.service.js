@@ -6,12 +6,12 @@ import { pool } from '../configs/database.js';
 
 const saltRounds = 10; 
 
-const isUsernameOrEmailExists = async (username, email) => {
+const isnameOrEmailExists = async (name, email) => {
     const connection = await pool.getConnection();
     try {
         const [rows] = await connection.execute(
-            'SELECT * FROM users WHERE username = ? OR email = ?',
-            [username, email]
+            'SELECT * FROM user WHERE name = ? OR email = ?',
+            [name, email]
         );
         return rows.length > 0;
     } finally {
@@ -20,10 +20,10 @@ const isUsernameOrEmailExists = async (username, email) => {
 };
 
 const register = async (userData) => {
-    const { username, email } = userData;
-    const exists = await isUsernameOrEmailExists(username, email);
+    const { name, email } = userData;
+    const exists = await isnameOrEmailExists(name, email);
     if (exists) {
-        throw new Error('Username or Email already existed');
+        throw new Error('name or Email already existed');
     }
 
     const hashedPassword = await bcrypt.hash(userData.password, saltRounds);

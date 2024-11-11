@@ -7,16 +7,13 @@ const router = express.Router();
 
 router
   .route("/")
-  // .post(authenticateJWT, medicineValidation.createNew, medicineController.createNew)
-  .post(categoryController.addCategory)
+  .post(authenticateJWT, categoryController.addCategory)
   .get(categoryController.getAllCategories);
 
 router
   .route("/:id")
-  // .put(authenticateJWT, medicineValidation.update,  medicineController.update)
-  .put(categoryController.updateCategory)
-  // .delete(authenticateJWT, medicineController.deleteMed)
-  .delete(categoryController.deleteCategory)
+  .put(authenticateJWT,categoryController.updateCategory)
+  .delete(authenticateJWT,categoryController.deleteCategory)
   .get(categoryController.getCategoryById);
 
 export const categoryRouter = router;

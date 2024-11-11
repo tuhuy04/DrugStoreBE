@@ -6,15 +6,12 @@
     const router = express.Router();
 
     router.route('/')
-        // .post(authenticateJWT, medicineValidation.createNew, medicineController.createNew)
-        .post( medicineController.createOrUpdateMed)
+        .post(authenticateJWT, medicineController.createOrUpdateMed)
         .get(medicineController.getAllMed); 
 
     router.route('/:id')
-        // .put(authenticateJWT, medicineValidation.update,  medicineController.update)
-        .put( medicineController.update)
-        // .delete(authenticateJWT, medicineController.deleteMed)
-        .delete(medicineController.deleteMed)
+        .put(authenticateJWT, medicineValidation.update, medicineController.update)
+        .delete(authenticateJWT,medicineController.deleteMed)
         .get(medicineController.getMed);
 
         

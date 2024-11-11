@@ -1,35 +1,42 @@
 import express from "express";
-import { env } from "./configs/environment.js"; // Cấu hình environment
-import { apiV1 } from "./routes/v1/index.js"; // Routes v1
-import helmet from "helmet"; // Bảo mật
-import morgan from "morgan"; // Log requests
-import compression from "compression"; // Nén requests
-import { pool } from './configs/database.js';  // Kết nối DB
+import { env } from "./configs/environment.js";
+import { apiV1 } from "./routes/v1/index.js";
+import helmet from "helmet";
+import morgan from "morgan";
+import compression from "compression";
 import cors from 'cors';
+import session from 'express-session';
+import { getCaptcha, validateCaptcha } from './controllers/captcha.js';
 
 const app = express();
 
 // Middleware
-app.use(cors()); 
-app.use(morgan('dev')); // Log HTTP
-app.use(helmet()); // Bảo mật
-app.use(compression()); // Nén request
-app.use(express.json()); // Parse JSON body
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded body
+app.use(cors());
+app.use(morgan('dev'));
+app.use(helmet());
+app.use(compression());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(session({
+  secret: 'tuantuSjcnejwncjf137728ecf42fc824f',
+  resave: false,
+  saveUninitialized: true,
+}));
 
-// Kết nối Database
+// Sử dụng các route cho CAPTCHA
+app.get('/captcha', getCaptcha);
+app.post('/validate-captcha', validateCaptcha);
 
-// Routes
-app.use("/v1", apiV1); // Sử dụng routes v1
+// Routes khác
+app.use("/v1", apiV1);
 
-// Xử lý lỗi 404
+// Error handling
 app.use((req, res, next) => {
   const error = new Error('Not Found');
   error.status = 404;
   next(error);
 });
 
-// Xử lý các lỗi khác
 app.use((error, req, res, next) => {
   const statusCode = error.status || 500;
   res.status(statusCode).json({
@@ -40,7 +47,7 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Khởi động server
+// Start server
 app.listen(env.APP_PORT, env.APP_HOST, () => {
   console.log(`Server is running at http://${env.APP_HOST}:${env.APP_PORT}`);
 });
