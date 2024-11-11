@@ -1,42 +1,49 @@
 import jwt from 'jsonwebtoken';
 import { env } from '../configs/environment.js';
+import { usersModel } from '../models/users.model.js';
 
-const authenticateJWT = (req, res, next) => {
+const authenticateJWT = async (req, res, next) => {
   let token = req.headers.authorization;
 
-  // Kiểm tra nếu token có tồn tại
+  // Check if token exists
   if (!token) {
-    console.error('Token không tồn tại trong request.');
-    return res.status(401).json({ message: 'Không có token, quyền truy cập bị từ chối.' });
+    console.error('Token is missing from the request.');
+    return res.status(401).json({ message: 'No token, access denied.' });
   }
 
-  console.log('Token được nhận:', token);
+  console.log('Received token:', token);
 
-  // Loại bỏ từ "Bearer " khỏi token nếu có
+  // Remove "Bearer " from token if present
   if (token.startsWith('Bearer ')) {
     token = token.slice(7, token.length);
   }
 
-  console.log('Token sau khi loại bỏ Bearer:', token);
+  console.log('Token after removing Bearer:', token);
 
-  // Xác minh token JWT
-  jwt.verify(token, env.APP_SECRET, (err, decoded) => {
+  // Verify JWT token
+  jwt.verify(token, env.APP_SECRET, async (err, decoded) => {
     if (err) {
-      // Xác minh token thất bại, xuất lỗi chi tiết
-      console.error('Token không hợp lệ hoặc đã hết hạn:', err.message);
+      console.error('Invalid or expired token:', err.message);
       if (err.name === 'TokenExpiredError') {
-        console.error('Token đã hết hạn tại:', err.expiredAt);
-        return res.status(403).json({ message: 'Token đã hết hạn.' });
+        console.error('Token expired at:', err.expiredAt);
+        return res.status(403).json({ message: 'Token has expired.' });
       }
-      if (err.name === 'JsonWebTokenError') {
-        return res.status(403).json({ message: 'JWT không hợp lệ.' });
-      }
-    } else {
-      // Xác minh thành công, hiển thị payload đã giải mã
-      console.log('Token hợp lệ. Payload đã giải mã:', decoded);
-      req.user = decoded; // Lưu thông tin user vào req
-      next(); // Tiếp tục tới middleware hoặc route tiếp theo
+      return res.status(403).json({ message: 'Invalid JWT.' });
     }
+
+    console.log('Valid token. Decoded payload:', decoded);
+
+    // Check user status from database
+    const user = await usersModel.getById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    if (user.status === 0) {
+      return res.status(403).json({ message: 'Account is blocked.' });
+    }
+
+    req.user = decoded; // Attach user info to request
+    next(); // Proceed to the next middleware or route handler
   });
 };
 
