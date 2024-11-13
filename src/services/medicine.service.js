@@ -37,7 +37,6 @@ const update = async (id, data) => {
   }
 };
 
-
 const deleteById = async (id) => {
   try {
     const affectedRows = await medicineModel.deleteMed(id);
@@ -106,6 +105,37 @@ const sell = async (id, quantity) => {
   }
 };
 
+const sortByDate = async () => {
+  try {
+    return await medicineModel.sortByDate();
+  } catch (error) {
+    throw new Error(`Error sorting medicines by date: ${error.message}`);
+  }
+};
+
+const sortByCategory = async () => {
+  try {
+    return await medicineModel.sortByCategory();
+  } catch (error) {
+    throw new Error(`Error sorting medicines by category: ${error.message}`);
+  }
+};
+
+const checkStock = async () => {
+  try {
+    const lowStockItems = await medicineModel.checkStock();
+    if (lowStockItems.length === 0) {
+      return { message: "All medicines are well-stocked." };
+    }
+    return {
+      message: "Some medicines are low in stock.",
+      items: lowStockItems,
+    };
+  } catch (error) {
+    throw new Error(`Error checking medicine stock: ${error.message}`);
+  }
+};
+
 export const medicineService = {
   // createNew,
   update,
@@ -116,4 +146,74 @@ export const medicineService = {
   importMedicine,
   sell,
   createOrUpdate,
+  sortByDate,
+  sortByCategory,
+  checkStock,
 };
+
+
+// const medicineModel = require('../models/medicine.model');  // Giả sử bạn có model medicine ở đây
+
+// // Tạo hoặc cập nhật thuốc
+// const createOrUpdateMed = async (medicineData) => {
+//   try {
+//     // Gọi phương thức tạo hoặc cập nhật từ model
+//     const result = await medicineModel.createOrUpdateMed(medicineData);
+//     return result; // Trả về kết quả (có thể là thông tin thuốc mới tạo hoặc cập nhật)
+//   } catch (error) {
+//     console.error('Error in createOrUpdateMed:', error.message);
+//     throw new Error(error.message || 'An error occurred while creating or updating the medicine');
+//   }
+// };
+
+// // Cập nhật thông tin thuốc
+// const updateMed = async (id, medicineData) => {
+//   try {
+//     const result = await medicineModel.updateMed(id, medicineData);
+//     return result; // Trả về kết quả cập nhật
+//   } catch (error) {
+//     console.error('Error in updateMed:', error.message);
+//     throw new Error(error.message || 'An error occurred while updating the medicine');
+//   }
+// };
+
+// // Xóa thuốc
+// const deleteMed = async (id) => {
+//   try {
+//     const result = await medicineModel.deleteMed(id);
+//     return result; // Trả về kết quả xóa
+//   } catch (error) {
+//     console.error('Error in deleteMed:', error.message);
+//     throw new Error(error.message || 'An error occurred while deleting the medicine');
+//   }
+// };
+
+// // Lấy danh sách thuốc
+// const getAllMeds = async () => {
+//   try {
+//     const result = await medicineModel.getAllMeds();
+//     return result; // Trả về danh sách thuốc
+//   } catch (error) {
+//     console.error('Error in getAllMeds:', error.message);
+//     throw new Error(error.message || 'An error occurred while fetching medicines');
+//   }
+// };
+
+// // Lấy thông tin thuốc theo ID
+// const getMedById = async (id) => {
+//   try {
+//     const result = await medicineModel.getMedById(id);
+//     return result; // Trả về thuốc theo ID
+//   } catch (error) {
+//     console.error('Error in getMedById:', error.message);
+//     throw new Error(error.message || 'An error occurred while fetching the medicine by ID');
+//   }
+// };
+
+// module.exports = {
+//   createOrUpdateMed,
+//   updateMed,
+//   deleteMed,
+//   getAllMeds,
+//   getMedById
+// };

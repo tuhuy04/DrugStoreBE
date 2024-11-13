@@ -1,22 +1,16 @@
 import { medicineService } from "../services/medicine.service.js";
 import { HTTP_STATUS_CODE } from "../utilities/constants.js";
 import upload from "../middlewares/upload.js";
+import { sendSuccessResponse, sendErrorResponse } from "../helpers/response.helper.js";
 
 const createOrUpdateMed = async (req, res) => {
   try {
     const medications = req.body;
     const result = await medicineService.createOrUpdate(medications);
-
-    res.status(HTTP_STATUS_CODE.OK).send({
-      created: result.created,
-      updated: result.updated,
-      message: "Medicine creation and update completed.",
-    });
+    sendSuccessResponse(res, result);
   } catch (error) {
     console.error("Error in createOrUpdateMed:", error);
-    res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).send({
-      error: new Error(error).message,
-    });
+    sendErrorResponse(res, error);
   }
 };
 
@@ -26,12 +20,10 @@ const update = async (req, res) => {
 
   try {
     const result = await medicineService.update(id, data);
-    res.status(HTTP_STATUS_CODE.OK).send(result);
+    sendSuccessResponse(res, result);
   } catch (error) {
     console.error("Error in update:", error);
-    res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).send({
-      error: new Error(error).message,
-    });
+    sendErrorResponse(res, error);
   }
 };
 
@@ -40,11 +32,10 @@ const deleteMed = async (req, res) => {
 
   try {
     const result = await medicineService.deleteById(id);
-    res.status(HTTP_STATUS_CODE.OK).send(result);
+    sendSuccessResponse(res, result);
   } catch (error) {
-    res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).send({
-      error: new Error(error).message,
-    });
+    console.error("Error in deleteMed:", error);
+    sendErrorResponse(res, error);
   }
 };
 
@@ -53,24 +44,53 @@ const getMed = async (req, res) => {
 
   try {
     const result = await medicineService.getById(id);
-    res.status(HTTP_STATUS_CODE.OK).send(result);
+    sendSuccessResponse(res, result);
   } catch (error) {
-    res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).send({
-      error: new Error(error).message,
-    });
+    console.error("Error in getMed:", error);
+    sendErrorResponse(res, error);
   }
 };
 
 const getAllMed = async (req, res) => {
   try {
     const result = await medicineService.getAll();
-    res.status(HTTP_STATUS_CODE.OK).send(result);
+    sendSuccessResponse(res, result);
   } catch (error) {
-    res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).send({
-      error: new Error(error).message,
-    });
+    console.error("Error in getAllMed:", error);
+    sendErrorResponse(res, error);
   }
 };
+
+const sortByDate = async (req, res) => {
+  try {
+    const result = await medicineService.sortByDate();
+    sendSuccessResponse(res, result);
+  } catch (error) {
+    console.error("Error in sortByDate:", error);
+    sendErrorResponse(res, error);
+  }
+};
+
+const sortByCategory = async (req, res) => {
+  try {
+    const result = await medicineService.sortByCategory();
+    sendSuccessResponse(res, result);
+  } catch (error) {
+    console.error("Error in sortByCategory:", error);
+    sendErrorResponse(res, error);
+  }
+};
+
+const checkStock = async (req, res) => {
+  try {
+    const result = await medicineService.checkStock();
+    sendSuccessResponse(res, result);
+  } catch (error) {
+    console.error("Error in checkStock:", error);
+    sendErrorResponse(res, error);
+  }
+};
+
 
 export const medicineController = {
   // createNew,
@@ -79,4 +99,7 @@ export const medicineController = {
   deleteMed,
   getMed,
   getAllMed,
+  sortByDate,
+  sortByCategory,
+  checkStock,
 };
