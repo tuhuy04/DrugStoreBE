@@ -6,7 +6,7 @@ import authenticateJWT from "../../middlewares/authenticateJWT.js";
 const router = express.Router();
 
 router.get("/check-stock",authenticateJWT, medicineController.checkStock);
-
+// router.get("/:{name}", medicineController.findByCategoryName);
 router
   .route("/")
   .post(authenticateJWT, medicineController.createOrUpdateMed)

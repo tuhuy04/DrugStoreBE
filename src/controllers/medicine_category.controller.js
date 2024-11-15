@@ -1,63 +1,61 @@
 import { categoryService } from "../services/medicine_category.service.js";
 import { HTTP_STATUS_CODE } from "../utilities/constants.js";
+import { ValidationError, NotFoundError, ConflictError } from "../utilities/errors.js";
+import { sendErrorResponse, sendSuccessResponse } from "../helpers/response.helper.js";
+
 
 const addCategory = async (req, res) => {
   const { name } = req.body;
   try {
     const result = await categoryService.addCategory(name);
-    res.status(HTTP_STATUS_CODE.CREATED).send(result);
+    sendSuccessResponse(res, result, HTTP_STATUS_CODE.CREATED);
   } catch (error) {
-    res.status(HTTP_STATUS_CODE.BAD_REQUEST).send({
-      error: error.message,
-    });
+    console.error("Error in createOrUpdateMed:", error);
+    sendErrorResponse(res, error);
   }
 };
 
 const updateCategory = async (req, res) => {
-  const id = req.params.id;
-  const { name } = req.body;
   try {
-    const result = await categoryService.updateCategory(id, name);
-    res.status(HTTP_STATUS_CODE.OK).send(result);
+    const id = req.params.id;
+    const data = req.body;
+    const result = await categoryService.updateCategory(id, data);
+    sendSuccessResponse(res, result);
   } catch (error) {
-    res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).send({
-      error: new Error(error).message,
-    });
+    console.error("Error in update:", error);
+    sendErrorResponse(res, error);
   }
-};
+}
 
 const deleteCategory = async (req, res) => {
-  const id = req.params.id;
   try {
+    const id = req.params.id;
     const result = await categoryService.deleteCategory(id);
-    res.status(HTTP_STATUS_CODE.OK).send(result);
+    sendSuccessResponse(res, result);
   } catch (error) {
-    res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).send({
-      error: error.message,
-    });
+    console.error("Error in delete category:", error);
+    sendErrorResponse(res, error);
   }
-};
+}
 
 const getCategoryById = async (req, res) => {
-  const id = req.params.id;
   try {
+    const id = req.params.id;
     const result = await categoryService.getCategoryById(id);
-    res.status(HTTP_STATUS_CODE.OK).send(result);
+    sendSuccessResponse(res, result);
   } catch (error) {
-    res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).send({
-      error: error.message,
-    });
+    console.error("Error in get category:", error);
+    sendErrorResponse(res, error);
   }
 };
 
 const getAllCategories = async (req, res) => {
   try {
     const result = await categoryService.getAllCategories();
-    res.status(HTTP_STATUS_CODE.OK).send(result);
+    sendSuccessResponse(res, result);
   } catch (error) {
-    res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).send({
-      error: error.message,
-    });
+    console.error("Error in get all category:", error);
+    sendErrorResponse(res, error);
   }
 };
 
