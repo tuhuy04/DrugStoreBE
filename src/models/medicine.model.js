@@ -7,6 +7,7 @@ import {
   AppError,
 } from "../utilities/errors.js";
 
+
 const medicineModel = {
   createOrUpdateMed: async (medications) => {
     const connection = await pool.getConnection();
@@ -62,7 +63,9 @@ const medicineModel = {
 
         if (existingMed.length > 0) {
           const medId = existingMed[0].id;
-          const updatedQuantity = existingMed[0].quantity + quantity;
+
+          const updatedQuantity =
+            parseInt(existingMed[0].quantity) + parseInt(quantity);
 
           await connection.execute(
             "UPDATE medicine SET quantity = ?, updated_at = NOW() WHERE id = ?",
@@ -75,6 +78,7 @@ const medicineModel = {
           );
 
           totalAmount += quantity * cost_price;
+
           results.updated.push({
             id: medId,
             name,
@@ -83,8 +87,8 @@ const medicineModel = {
         } else {
           const [result] = await connection.execute(
             `INSERT INTO medicine (name, category_id, supplier_id, description, 
-            quantity, unit, cost_price, selling_price, image_url, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+              quantity, unit, cost_price, selling_price, image_url, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
             [
               name,
               category_id,
@@ -104,6 +108,7 @@ const medicineModel = {
           );
 
           totalAmount += quantity * cost_price;
+
           results.created.push({
             id: result.insertId,
             name,
@@ -134,11 +139,10 @@ const medicineModel = {
   updateMed: async (id, data) => {
     const connection = await pool.getConnection();
     try {
-      const [existingMed] = await connection.execute(
+      const [existingMed] = await connection.query(
         "SELECT id FROM medicine WHERE name = ? AND id != ?",
         [data.name, id]
       );
-
       if (existingMed.length > 0) {
         throw new ConflictError(
           "A medicine with the same name already exists."
@@ -147,10 +151,10 @@ const medicineModel = {
 
       const [result] = await connection.execute(
         `UPDATE medicine SET 
-          name = ?, category_id = ?, supplier_id = ?, description = ?,
-          unit = ?, cost_price = ?, selling_price = ?, image_url = ?,
-          updated_at = NOW()
-        WHERE id = ?`,
+        name = ?, category_id = ?, supplier_id = ?, description = ?, 
+        unit = ?, cost_price = ?, selling_price = ?, image_url = ?, 
+        updated_at = NOW()
+      WHERE id = ?`,
         [
           data.name,
           data.category_id,
@@ -245,56 +249,19 @@ const medicineModel = {
     }
   },
 
-  sortByDate: async () => {
-    const connection = await pool.getConnection();
-    try {
-      const [rows] = await connection.execute(
-        "SELECT * FROM medicine ORDER BY created_at DESC"
-      );
-      return rows;
-    } catch (error) {
-      throw new AppError(
-        `Error sorting by date: ${error.message}`,
-        HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
-      );
-    } finally {
-      connection.release();
-    }
-  },
-
-  sortByCategory: async () => {
-    const connection = await pool.getConnection();
-    try {
-      const [rows] = await connection.execute(
-        `SELECT m.*, c.name as category_name 
-         FROM medicine m 
-         JOIN categories c ON m.category_id = c.id 
-         ORDER BY c.name, m.name`
-      );
-      return rows;
-    } catch (error) {
-      throw new AppError(
-        `Error sorting by category: ${error.message}`,
-        HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
-      );
-    } finally {
-      connection.release();
-    }
-  },
-
   checkStock: async () => {
     const connection = await pool.getConnection();
     try {
       const [rows] = await connection.execute(
         `SELECT id, name, quantity,
-         CASE 
-           WHEN quantity <= 5 THEN 'CRITICAL'
-           WHEN quantity <= 10 THEN 'LOW'
-           ELSE 'NORMAL'
-         END as stock_status
-         FROM medicine 
-         WHERE quantity <= 10
-         ORDER BY quantity ASC`
+          CASE 
+            WHEN quantity <= 5 THEN 'CRITICAL'
+            WHEN quantity <= 10 THEN 'LOW'
+            ELSE 'NORMAL'
+          END as stock_status
+          FROM medicine 
+          WHERE quantity <= 10
+          ORDER BY quantity ASC`
       );
       return rows;
     } catch (error) {
@@ -307,29 +274,70 @@ const medicineModel = {
     }
   },
 
-  findByCategoryName: async (category_name) => {
+  getMedByCategory: async (category_name) => {
     const connection = await pool.getConnection();
     try {
-      const [rows] = await connection.execute(
-        `SELECT m.*, c.name as category_name 
-         FROM medicine m 
-         JOIN categories c ON m.category_id = c.id 
-         WHERE c.name = ?`,
+      const [categoryRows] = await connection.execute(
+        `SELECT id FROM medicine_category WHERE category_name = ?`,
         [category_name]
       );
-      if (rows.length === 0) {
+
+      if (categoryRows.length === 0) {
         throw new NotFoundError("Category not found");
       }
-      return rows[0];
+
+      const categoryId = categoryRows[0].id;
+      const [medicineRows] = await connection.execute(
+        `SELECT m.*, c.category_name 
+          FROM medicine m 
+          JOIN medicine_category c ON m.category_id = c.id 
+          WHERE c.id = ?`,
+        [categoryId]
+      );
+
+      return medicineRows;
     } catch (error) {
       throw new AppError(
-        `Error finding by category name: ${error.message}`,
+        `Error retrieving medicine by category: ${error.message}`,
         HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
       );
     } finally {
       connection.release();
     }
-  }
-}
+  },
+
+  getMedByName: async (keyword) => {
+    if (!keyword || keyword.trim() === "") {
+      throw new AppError(
+        "Keyword cannot be empty",
+        HTTP_STATUS_CODE.BAD_REQUEST
+      );
+    }
+
+    const connection = await pool.getConnection();
+    try {
+      const [rows] = await connection.execute(
+        `SELECT * 
+              FROM medicine 
+              WHERE name LIKE ?`,
+        [`%${keyword}%`]
+      );
+      if (rows.length === 0) {
+        throw new NotFoundError("No medicine found matching the keyword");
+      }
+      return rows;
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new AppError(
+        `Error retrieving medicines by names: ${error.message}`,
+        HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+      );
+    } finally {
+      connection.release();
+    }
+  },
+};
 
 export { medicineModel };

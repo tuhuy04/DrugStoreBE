@@ -1,6 +1,12 @@
 import { medicineModel } from "../models/medicine.model.js";
 import { ValidationError, AppError } from "../utilities/errors.js";
 import { HTTP_STATUS_CODE } from "../utilities/constants.js";
+import { upload } from "../middlewares/upload.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const medicineService = {
   createOrUpdate: async (medications) => {
@@ -18,11 +24,35 @@ const medicineService = {
   update: async (id, data) => {
     try {
       const existingMedicine = await medicineModel.getMedById(id);
+      if (!existingMedicine) {
+        throw new NotFoundError("Medicine not found");
+      }
 
-      if (!data.name && !data.category_id && !data.description) {
+      if (!Object.keys(data).length) {
         throw new ValidationError(
           "At least one field must be provided for update"
         );
+      }
+
+      let updatedImageUrl = existingMedicine.image_url;
+
+      if (data.image_url) {
+        const oldImagePath = path.resolve(
+          __dirname,
+          "../uploads/medicine",
+          path.basename(existingMedicine.image_url)
+        );
+
+        if (fs.existsSync(oldImagePath)) {
+          try {
+            fs.unlinkSync(oldImagePath);
+            console.log("Old image deleted:", oldImagePath);
+          } catch (error) {
+            console.error("Error deleting old image:", error);
+          }
+        }
+
+        updatedImageUrl = data.image_url.replace(/\\/g, "/");
       }
 
       const updatedData = {
@@ -33,10 +63,15 @@ const medicineService = {
         unit: data.unit || existingMedicine.unit,
         cost_price: data.cost_price || existingMedicine.cost_price,
         selling_price: data.selling_price || existingMedicine.selling_price,
-        image_url: data.image_url || existingMedicine.image_url,
+        image_url: updatedImageUrl,
       };
 
-      return await medicineModel.updateMed(id, updatedData);
+      const result = await medicineModel.updateMed(id, updatedData);
+
+      return {
+        message: "Medicine updated successfully",
+        oldImageUrl: existingMedicine.image_url,
+      };
     } catch (error) {
       if (error instanceof AppError) throw error;
       throw new AppError(
@@ -51,19 +86,19 @@ const medicineService = {
   },
 
   getById: async (id) => {
-    return await medicineModel.getMedById(id);
+    try {
+      return await medicineModel.getMedById(id);
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        `Error retrieving medicine: ${error.message}`,
+        HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+      );
+    }
   },
 
   getAll: async () => {
     return await medicineModel.getAllMed();
-  },
-
-  sortByDate: async () => {
-    return await medicineModel.sortByDate();
-  },
-
-  sortByCategory: async () => {
-    return await medicineModel.sortByCategory();
   },
 
   checkStock: async () => {
@@ -77,11 +112,30 @@ const medicineService = {
     };
   },
 
-  findByCategoryName: async (category_name) => {
-    return await medicineModel.findByCategoryName(category_name);
-  }
-  
-};
+  getMedByCategory: async (category_name) => {
+    try {
+      return await medicineModel.getMedByCategory(category_name);
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        `Error retrieving medicine by category: ${error.message}`,
+        HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+      );
+    }
+  },
 
+  getMedByName: async (keyword) => {
+    try {
+      const medicines = await medicineModel.getMedByName(keyword);
+      return medicines;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        `Error searching medicine by name: ${error.message}`,
+        HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+      );
+    }
+  },
+};
 
 export { medicineService };

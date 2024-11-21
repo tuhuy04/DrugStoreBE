@@ -74,8 +74,10 @@ const getImportByDate = async (startDate, endDate = null) => {
     let params = [];
 
     if (endDate) {
+      const nextDay = new Date(endDate);
+      nextDay.setDate(nextDay.getDate() + 1);
       query += `import_date BETWEEN ? AND ?`;
-      params = [startDate, endDate];
+      params = [startDate, nextDay.toISOString().slice(0, 19).replace('T', ' ')];
     } else {
       query += `DATE(import_date) = ?`;
       params = [startDate];

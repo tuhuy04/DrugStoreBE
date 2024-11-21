@@ -1,13 +1,32 @@
 import { medicineService } from "../services/medicine.service.js";
-import { sendSuccessResponse, sendErrorResponse } from "../helpers/response.helper.js";
+import {
+  sendSuccessResponse,
+  sendErrorResponse,
+} from "../helpers/response.helper.js";
 import { HTTP_STATUS_CODE } from "../utilities/constants.js";
-
+import { AppError } from "../utilities/errors.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const medicineController = {
   createOrUpdateMed: async (req, res) => {
     try {
+      const file = req.file;
       const medications = req.body;
-      const result = await medicineService.createOrUpdate(medications);
+
+      if (!file) {
+        throw new ValidationError("Image file is required!");
+      }
+
+      const relativeImagePath = path.join("uploads", "medicine", file.filename);
+      medications.image_url = relativeImagePath;
+
+      console.log("Medication data:", req.body);
+
+      const result = await medicineService.createOrUpdate([medications]);
       sendSuccessResponse(res, result, HTTP_STATUS_CODE.CREATED);
     } catch (error) {
       console.error("Error in createOrUpdateMed:", error);
@@ -19,10 +38,24 @@ const medicineController = {
     try {
       const id = req.params.id;
       const data = req.body;
+
+      if (req.file) {
+        data.image_url = path.join("uploads", "medicine", req.file.filename);
+      }
+
       const result = await medicineService.update(id, data);
       sendSuccessResponse(res, result);
     } catch (error) {
       console.error("Error in update:", error);
+
+      if (req.file && req.file.path) {
+        try {
+          fs.unlinkSync(req.file.path);
+          console.log("Uploaded image removed:", req.file.path);
+        } catch (fsError) {
+          console.error("Error removing uploaded image:", fsError);
+        }
+      }
       sendErrorResponse(res, error);
     }
   },
@@ -91,26 +124,25 @@ const medicineController = {
 
   getMedByCategory: async (req, res) => {
     try {
-      const name = req.params.name;
-      const result = await medicineService.getMedByCategory(name);
-      sendSuccessResponse(res, result);
-    } catch (error) {
-      console.error("Error in getMedByCategory:", error);
-      sendErrorResponse(res, error);
-    }
-  },
-
-  getMedByCategoryName: async (req, res) => {
-    try {
-      const name = req.params.name;
-      const result = await medicineService.findByCategoryName(name);
+      const category_name = req.params.category_name;
+      const result = await medicineService.getMedByCategory(category_name);
       sendSuccessResponse(res, result);
     } catch (error) {
       console.error("Error in getMedByCategoryName:", error);
       sendErrorResponse(res, error);
     }
-  }
-}  
+  },
 
+  getMedByName: async (req, res) => {
+    try {
+      const { keyword } = req.query; //
+      const result = await medicineService.getMedByName(keyword);
+      sendSuccessResponse(res, result);
+    } catch (error) {
+      console.error("Error in searchMedicineByName:", error);
+      sendErrorResponse(res, error);
+    }
+  },
+};
 
-export {medicineController} ;
+export { medicineController };

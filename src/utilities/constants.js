@@ -16,3 +16,7 @@ export const DB_COLLECTION_NAME = {
   CARDS: "cards"
 };
 
+export const UPLOAD_FOLDER = "./uploads/";
+
+export const MAX_FILE_SIZE = 1024 * 1024 * 5; 
+
