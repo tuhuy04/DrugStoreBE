@@ -1,119 +1,141 @@
 import { medicineModel } from "../models/medicine.model.js";
+import { ValidationError, AppError } from "../utilities/errors.js";
+import { HTTP_STATUS_CODE } from "../utilities/constants.js";
+import { upload } from "../middlewares/upload.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const createOrUpdate = async (medications) => {
-  try {
-    return await medicineModel.createOrUpdateMed(medications);
-  } catch (error) {
-    throw new Error(`Error creating or updating medicines: ${error.message}`);
-  }
-};
-
-const update = async (id, data) => {
-  try {
-    const existingMedicine = await medicineModel.getMedById(id);
-    if (!existingMedicine) {
-      throw new Error("Medicine not found");
+const medicineService = {
+  createOrUpdate: async (medications) => {
+    try {
+      return await medicineModel.createOrUpdateMed(medications);
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        `Error in medicine service: ${error.message}`,
+        HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+      );
     }
+  },
 
-    const updatedData = {
-      name: data.name || existingMedicine.name,
-      category_id: data.category_id || existingMedicine.category_id,
-      supplier_id: data.supplier_id || existingMedicine.supplier_id,
-      description: data.description || existingMedicine.description,
-      unit: data.unit || existingMedicine.unit,
-      cost_price: data.cost_price || existingMedicine.cost_price,
-      selling_price: data.selling_price || existingMedicine.selling_price,
-      image_url: data.image_url || existingMedicine.image_url,
-    };
+  update: async (id, data) => {
+    try {
+      const existingMedicine = await medicineModel.getMedById(id);
+      if (!existingMedicine) {
+        throw new NotFoundError("Medicine not found");
+      }
 
-    const affectedRows = await medicineModel.updateMed(id, updatedData);
-    if (affectedRows === 0) {
-      throw new Error("No changes were made or medicine not found");
+      if (!Object.keys(data).length) {
+        throw new ValidationError(
+          "At least one field must be provided for update"
+        );
+      }
+
+      let updatedImageUrl = existingMedicine.image_url;
+
+      if (data.image_url) {
+        const oldImagePath = path.resolve(
+          __dirname,
+          "../uploads/medicine",
+          path.basename(existingMedicine.image_url)
+        );
+
+        if (fs.existsSync(oldImagePath)) {
+          try {
+            fs.unlinkSync(oldImagePath);
+            console.log("Old image deleted:", oldImagePath);
+          } catch (error) {
+            console.error("Error deleting old image:", error);
+          }
+        }
+
+        updatedImageUrl = data.image_url.replace(/\\/g, "/");
+      }
+
+      const updatedData = {
+        name: data.name || existingMedicine.name,
+        category_id: data.category_id || existingMedicine.category_id,
+        supplier_id: data.supplier_id || existingMedicine.supplier_id,
+        description: data.description || existingMedicine.description,
+        unit: data.unit || existingMedicine.unit,
+        cost_price: data.cost_price || existingMedicine.cost_price,
+        selling_price: data.selling_price || existingMedicine.selling_price,
+        image_url: updatedImageUrl,
+      };
+
+      const result = await medicineModel.updateMed(id, updatedData);
+
+      return {
+        message: "Medicine updated successfully",
+        oldImageUrl: existingMedicine.image_url,
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        `Error in medicine service: ${error.message}`,
+        HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+      );
     }
+  },
 
-    return { message: "Medicine updated successfully" };
-  } catch (error) {
-    throw new Error(`Error updating medicine: ${error.message}`);
-  }
-};
+  deleteById: async (id) => {
+    return await medicineModel.deleteMed(id);
+  },
 
-
-const deleteById = async (id) => {
-  try {
-    const affectedRows = await medicineModel.deleteMed(id);
-    if (affectedRows === 0) {
-      throw new Error("Medicine not found");
+  getById: async (id) => {
+    try {
+      return await medicineModel.getMedById(id);
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        `Error retrieving medicine: ${error.message}`,
+        HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+      );
     }
-    return { message: "Medicine deleted successfully" };
-  } catch (error) {
-    throw new Error(`Error deleting medicine: ${error.message}`);
-  }
-};
+  },
 
-const getById = async (id) => {
-  try {
-    const medicine = await medicineModel.getMedById(id);
-    if (!medicine) {
-      throw new Error("Medicine not found");
-    }
-    return medicine;
-  } catch (error) {
-    throw new Error(`Error retrieving medicine: ${error.message}`);
-  }
-};
-
-const getAll = async () => {
-  try {
+  getAll: async () => {
     return await medicineModel.getAllMed();
-  } catch (error) {
-    throw new Error(`Error retrieving medicines: ${error.message}`);
-  }
-};
+  },
 
-const find = async (searchParams) => {
-  try {
-    const medicine = await medicineModel.findMed(searchParams);
-    if (!medicine) {
-      throw new Error("Medicine not found");
+  checkStock: async () => {
+    const lowStockItems = await medicineModel.checkStock();
+    return {
+      message:
+        lowStockItems.length > 0
+          ? "Some medicines are low in stock"
+          : "All medicines are well-stocked",
+      items: lowStockItems,
+    };
+  },
+
+  getMedByCategory: async (category_name) => {
+    try {
+      return await medicineModel.getMedByCategory(category_name);
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        `Error retrieving medicine by category: ${error.message}`,
+        HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+      );
     }
-    return medicine;
-  } catch (error) {
-    throw new Error(`Error finding medicine: ${error.message}`);
-  }
-};
+  },
 
-const importMedicine = async (id, quantity) => {
-  try {
-    const affectedRows = await medicineModel.importMed(id, quantity);
-    if (affectedRows === 0) {
-      throw new Error("Medicine not found");
+  getMedByName: async (keyword) => {
+    try {
+      const medicines = await medicineModel.getMedByName(keyword);
+      return medicines;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(
+        `Error searching medicine by name: ${error.message}`,
+        HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+      );
     }
-    return { message: "Medicine imported successfully" };
-  } catch (error) {
-    throw new Error(`Error importing medicine: ${error.message}`);
-  }
+  },
 };
 
-const sell = async (id, quantity) => {
-  try {
-    const affectedRows = await medicineModel.sellMed(id, quantity);
-    if (affectedRows === 0) {
-      throw new Error("Not enough stock to sell");
-    }
-    return { message: "Medicine sold successfully" };
-  } catch (error) {
-    throw new Error(`Error selling medicine: ${error.message}`);
-  }
-};
-
-export const medicineService = {
-  // createNew,
-  update,
-  deleteById,
-  getById,
-  getAll,
-  find,
-  importMedicine,
-  sell,
-  createOrUpdate,
-};
+export { medicineService };

@@ -1,18 +1,26 @@
-    import express from 'express';
-    import { medicineController } from '../../controllers/medicine.controller.js';
-    import { medicineValidation } from '../../validations/medicine.validation.js';
-    import authenticateJWT from '../../middlewares/authenticateJWT.js';
+import express from "express";
+import { medicineController } from "../../controllers/medicine.controller.js";
+import { medicineValidation } from "../../validations/medicine.validation.js";
+import authenticateJWT from "../../middlewares/authenticateJWT.js";
+import {upload} from "../../middlewares/upload.js";
 
-    const router = express.Router();
 
-    router.route('/')
-        .post(authenticateJWT, medicineController.createOrUpdateMed)
-        .get(medicineController.getAllMed); 
+const router = express.Router();
 
-    router.route('/:id')
-        .put(authenticateJWT, medicineValidation.update, medicineController.update)
-        .delete(authenticateJWT,medicineController.deleteMed)
-        .get(medicineController.getMed);
+router.get("/check-stock",authenticateJWT, medicineController.checkStock);
+router.get("/category/:category_name", medicineController.getMedByCategory);
+router.get("/search", medicineController.getMedByName);
+router
+  .route("/")
+  .post(authenticateJWT,upload.single("image"), medicineController.createOrUpdateMed)
+  .get(medicineController.getAllMed);
 
-        
-    export const medicineRouter = router;
+router
+  .route("/:id")
+  .put(authenticateJWT, upload.single("image"), medicineController.update)
+  .delete(authenticateJWT, medicineController.deleteMed)
+  .get(medicineController.getMed);
+
+
+
+export const medicineRouter = router;

@@ -9,6 +9,7 @@ import {userPasswordRouter } from './userPassword.route.js'
 import {adminRouter} from './admin.route.js'
 import { cartRouter } from './cart.route.js';
 import { chatRouter } from "./chat.route.js";
+import { importMedRouter } from "./import_med.route.js";
 
 const router = express.Router();
 
@@ -23,5 +24,6 @@ router.use('/password', userPasswordRouter);
 router.use('/admin', adminRouter);
 router.use('/cart', cartRouter);
 router.use('/chat', chatRouter);
+router.use("/import", importMedRouter);
 
 export const apiV1 = router;
