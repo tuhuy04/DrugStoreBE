@@ -338,6 +338,22 @@ const medicineModel = {
       connection.release();
     }
   },
+   getMedicineStock : async (medicineId) => {
+    const connection = await pool.getConnection();
+    try {
+        const [rows] = await connection.execute(
+            'SELECT quantity FROM medicine WHERE id = ?',
+            [medicineId]
+        );
+        if (rows.length === 0) {
+            throw new Error('Medicine not found');
+        }
+        return rows[0].quantity; 
+    } finally {
+        connection.release();
+    }
+  }
 };
+
 
 export { medicineModel };

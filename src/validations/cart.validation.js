@@ -11,6 +11,7 @@ const validateAddToCart = async (req, res, next) => {
         quantity: Joi.number().required().positive().messages({
             'number.base': 'Quantity must be a number',
             'number.positive': 'Quantity must be positive',
+            
             'any.required': 'Quantity is required'
         })
     });

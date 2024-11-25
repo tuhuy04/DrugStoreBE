@@ -1,8 +1,10 @@
+'use strict';
+
 import { createCanvas, loadImage } from 'canvas';
 import fs from 'fs';
 import path from 'path';
+import { HTTP_STATUS_CODE } from "../utilities/constants.js";
 
-// Hàm lấy ảnh ngẫu nhiên từ thư mục
 function getRandomImagePath(directory) {
     const files = fs.readdirSync(directory);
     const imageFiles = files.filter(file => /\.(jpg|jpeg|png|gif)$/i.test(file));
@@ -10,27 +12,23 @@ function getRandomImagePath(directory) {
     return path.join(directory, randomFile);
 }
 
-// Hàm sinh CAPTCHA
 export async function generateCaptcha() {
     const canvas = createCanvas(320, 200);
     const ctx = canvas.getContext('2d');
 
-    // Lấy ảnh ngẫu nhiên từ thư mục 'uploads'
+    // Get a random image from the 'uploads/captcha' directory
     const randomImagePath = getRandomImagePath('uploads/captcha');
     const img = await loadImage(randomImagePath);
-    console.log(randomImagePath)
-   
+    console.log('Random image:', randomImagePath);
     ctx.drawImage(img, 0, 0, 320, 200);
 
-  
-    const pieceCanvas = createCanvas(50, 50);
+    // Generate a piece for the puzzle
+    const pieceCanvas = createCanvas(60, 60);
     const pieceCtx = pieceCanvas.getContext('2d');
-    const pieceX = Math.floor(Math.random() * (320 - 60)); // Xác định vị trí x ngẫu nhiên
-    const pieceY = Math.floor(Math.random() * (200 - 60)); // Xác định vị trí y ngẫu nhiên
-
-    console.log(`Random CAPTCHA piece position: x = ${pieceX}, y = ${pieceY}`);
+    const pieceX = Math.floor(Math.random() * (320 - 60));
+    const pieceY = Math.floor(Math.random() * (200 - 60));
     pieceCtx.drawImage(img, pieceX, pieceY, 60, 60, 0, 0, 60, 60);
-
+    console.log('Piece position:', pieceX, pieceY);
     return {
         background: canvas.toDataURL(),
         piece: pieceCanvas.toDataURL(),
@@ -39,25 +37,47 @@ export async function generateCaptcha() {
 }
 
 export async function getCaptcha(req, res) {
-    const { background, piece, piecePosition } = await generateCaptcha();
-    req.session.captchaPosition = piecePosition;
-    req.session.captchaTimestamp = Date.now(); // Lưu thời gian tạo CAPTCHA
-    res.json({ background, piece });
+    try {
+        const { background, piece, piecePosition } = await generateCaptcha();
+        req.session.captchaPosition = piecePosition;
+        req.session.captchaTimestamp = Date.now();
+        res.status(HTTP_STATUS_CODE.OK).json({
+            code: HTTP_STATUS_CODE.OK,
+            status: 'success',
+            data: { background, piece },
+            message: 'CAPTCHA generated successfully'
+        });
+    } catch (error) {
+        console.error('Error generating CAPTCHA:', error);
+        res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+            code: HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR,
+            status: 'fail',
+            message: error.message || 'An error occurred while generating CAPTCHA.'
+        });
+    }
 }
 
 export function validateCaptcha(req, res) {
     const captchaAge = Date.now() - req.session.captchaTimestamp;
-    const maxCaptchaAge = 5 * 60 * 1000; // e.g., 5 phút
+    const maxCaptchaAge = 5 * 60 * 1000;
 
     if (captchaAge > maxCaptchaAge) {
-        return res.status(400).json({ message: 'CAPTCHA đã hết hạn. Vui lòng thử lại.' });
+        return res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
+            code: HTTP_STATUS_CODE.BAD_REQUEST,
+            status: 'fail',
+            message: 'CAPTCHA has expired. Please try again.'
+        });
     }
 
     const { x, y } = req.body;
     const correctPosition = req.session.captchaPosition;
 
     if (!correctPosition) {
-        return res.status(400).json({ message: 'CAPTCHA chưa được tạo hoặc đã hết hạn.' });
+        return res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
+            code: HTTP_STATUS_CODE.BAD_REQUEST,
+            status: 'fail',
+            message: 'CAPTCHA has not been generated or has expired.'
+        });
     }
 
     const tolerance = 10;
@@ -65,10 +85,18 @@ export function validateCaptcha(req, res) {
 
     if (isValidCaptcha) {
         req.session.isCaptchaValid = true;
-        req.session.captchaPosition = null; // Xóa vị trí CAPTCHA sau khi xác minh thành công
-        return res.json({ valid: true, message: 'CAPTCHA hợp lệ.' });
+        req.session.captchaPosition = null;
+        return res.status(HTTP_STATUS_CODE.OK).json({
+            code: HTTP_STATUS_CODE.OK,
+            status: 'success',
+            message: 'CAPTCHA validated successfully.'
+        });
     } else {
         req.session.isCaptchaValid = false;
-        return res.json({ valid: false, message: 'CAPTCHA không hợp lệ.' });
+        return res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
+            code: HTTP_STATUS_CODE.BAD_REQUEST,
+            status: 'fail',
+            message: 'CAPTCHA validation failed.'
+        });
     }
 }
