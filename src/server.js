@@ -8,6 +8,7 @@ import cors from 'cors';
 import session from 'express-session';
 import { getCaptcha, validateCaptcha } from './controllers/captcha.js';
 
+
 const app = express();
 
 // Middleware

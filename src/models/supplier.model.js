@@ -1,15 +1,15 @@
 import { pool } from "../configs/database.js";
+import { ConflictError, NotFoundError } from "../utilities/errors.js";
+import { HTTP_STATUS_CODE } from "../utilities/constants.js";
+import { AppError } from "../utilities/errors.js";
+
 
 const addSupplier = async ({ name, phone, email, location }) => {
-  if (!name || !phone || !email || !location) {
-    throw new Error("All fields are required and must not be undefined.");
-  }
-
   const connection = await pool.getConnection();
   try {
     const exists = await checkSupplierExists(name);
     if (exists) {
-      throw new Error("Supplier already exists");
+      throw new ConflictError("Supplier already exists");
     }
 
     const [result] = await connection.execute(
@@ -17,6 +17,13 @@ const addSupplier = async ({ name, phone, email, location }) => {
       [name, phone, email, location]
     );
     return result.insertId;
+  } catch (error) {
+    await connection.rollback();
+    if (error instanceof AppError) throw error;
+    throw new AppError(
+      `Error creating or updating supplier: ${error.message}`,
+      HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+    );
   } finally {
     connection.release();
   }
@@ -42,14 +49,29 @@ const updateSupplier = async (id, { name, phone, email, location }) => {
       "SELECT id FROM supplier WHERE name = ? AND id != ?",
       [name, id]
     );
+
     if (existingSupplier.length > 0) {
-      throw new Error("A supplier with the same name already exists.");
+      throw new ConflictError("A supplier with the same name already exists.");
     }
+
     const [result] = await connection.execute(
-      "UPDATE supplier SET name = ?, phone = ?, email = ?, location = ? WHERE id = ?",
-      [name || null, phone || null, email || null, location || null, id]
+      `UPDATE supplier SET 
+      name = ?, phone = ?, email = ?, location = ?
+      WHERE id = ?`,
+      [name, phone, email, location, id]
     );
-    return result.affectedRows;
+
+    if (result.affectedRows === 0) {
+      throw new NotFoundError("Supplier not found");
+    }
+
+    return { message: "Supplier updated successfully" };
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(
+      `Error updating supplier: ${error.message}`,
+      HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+    );
   } finally {
     connection.release();
   }
@@ -72,18 +94,27 @@ const checkMedicineBySupplier = async (supplier_id) => {
 const deleteSupplier = async (id) => {
   const connection = await pool.getConnection();
   try {
-    const isMedicineExists = await checkMedicineBySupplier(id);
-    if (isMedicineExists) {
-      throw new Error(
-        "Cannot delete supplier, because there are medicines linked to this supplier."
-      );
+    const exists = await checkMedicineBySupplier(id);
+    if (exists) {
+      throw new ConflictError("Supplier has medicines associated with it");
     }
 
     const [result] = await connection.execute(
       "DELETE FROM supplier WHERE id = ?",
       [id]
     );
-    return result.affectedRows;
+
+    if (result.affectedRows === 0) {
+      throw new NotFoundError("Supplier not found");
+    }
+
+    return { message: "Supplier deleted successfully" };
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(
+      `Error deleting supplier: ${error.message}`,
+      HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+    );
   } finally {
     connection.release();
   }
@@ -96,17 +127,34 @@ const getSupplierById = async (id) => {
       "SELECT * FROM supplier WHERE id = ?",
       [id]
     );
+    if (result.length === 0) {
+      throw new NotFoundError("Supplier not found");
+    }
     return result[0];
-  } finally {
+  }catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(
+      `Error deleting supplier: ${error.message}`,
+      HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+    );
+  }  finally {
     connection.release();
   }
-};
+}
 
 const getAllSuppliers = async () => {
   const connection = await pool.getConnection();
   try {
-    const [result] = await connection.execute("SELECT * FROM supplier");
+    const [result] = await connection.execute(
+      "SELECT * FROM supplier"
+    );
     return result;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(
+      `Error retrieving suppliers: ${error.message}`,
+      HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+    );
   } finally {
     connection.release();
   }
