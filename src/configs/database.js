@@ -11,7 +11,6 @@ const pool = mysql.createPool({
 const testConnection = async () => {
     try {
         const connection = await pool.getConnection();
-        console.log('Connected as id ' + connection.threadId);
         connection.release();
     } catch (err) {
         console.error('Error connecting: ' + err.stack);

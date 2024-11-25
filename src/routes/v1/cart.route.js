@@ -12,6 +12,6 @@ router.get('/', cartController.getCart);
 router.post('/add', cartValidation.validateAddToCart, cartController.addToCart);
 router.put('/update', cartValidation.validateUpdateQuantity, cartController.updateItemQuantity);
 router.delete('/item/:itemId', cartController.removeItem);
-router.post('/checkout', cartController.checkout);
+router.get('/checkout', cartController.checkout);
 
 export const cartRouter = router;
