@@ -9,14 +9,15 @@ const router = express.Router();
 router.route('/register').post(validateCreateUser, accessController.register);
 
 // API đăng nhập
-router.route('/login').post((req, res, next) => {
+// router.route('/login').post((req, res, next) => {
     
-    if (req.session.isCaptchaValid) {
-        accessController.login(req, res, next);
-    } else {
-        res.status(400).json({ message: 'CAPTCHA chưa được xác minh hoặc không hợp lệ.' });
-    }
-});
+//     if (req.session.isCaptchaValid) {
+//         accessController.login(req, res, next);
+//     } else {
+//         res.status(400).json({ message: 'CAPTCHA chưa được xác minh hoặc không hợp lệ.' });
+//     }
+// });
+router.route('/login').post(accessController.login);
 
 router.route('/logout').post(authenticateJWT, accessController.logout);
 

@@ -42,18 +42,6 @@ const deleteById = async (id) => {
     }
 };
 
-const getById = async (id) => {
-    const connection = await pool.getConnection();
-    try {
-        const [rows] = await connection.execute(
-            'SELECT * FROM user WHERE id = ?',
-            [id]
-        );
-        return rows[0]; 
-    } finally {
-        connection.release();
-    }
-};
 
 const getByEmail = async (email) => {
     const connection = await pool.getConnection();
@@ -176,6 +164,31 @@ const updateUserStatus = async (userId, status) => {
   };    
 
 
+  const getAllUsers = async () => {
+    const connection = await pool.getConnection();
+    try {
+        const [rows] = await connection.execute(
+            'SELECT id, name, email, phone, address, status FROM user'
+        );
+        return rows;
+    } finally {
+        connection.release();
+    }
+};
+
+const getById = async (id) => {
+    const connection = await pool.getConnection();
+    try {
+        const [rows] = await connection.execute(
+            'SELECT id, name, email, phone, date_of_birth, profile_image, address, gender FROM user WHERE id = ?',
+            [id]
+        );
+        return rows[0];
+    } finally {
+        connection.release();
+    }
+};
+
 
 export const usersModel = {
     createNew,
@@ -184,14 +197,16 @@ export const usersModel = {
     getById,
     getByEmail,
     getByEmailOrUsername,
-    updateProfile, 
+    updateProfile,
     saveResetCode,
     verifyResetCode,
     updatePassword,
     clearResetCode,
     updateUserStatus,
     getUserActivityLogs,
-    logUserActivity
+    logUserActivity,
+    getAllUsers 
 };
+
 
 

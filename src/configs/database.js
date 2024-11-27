@@ -5,7 +5,7 @@ const pool = mysql.createPool({
     host: env.APP_HOST,  
     database: env.DATABASE_NAME, 
     user: env.DB_USER || 'root', 
-    password: env.DB_PASSWORD || '13022004', 
+    password: env.DB_PASSWORD || '12345678', 
 });
 
 const testConnection = async () => {

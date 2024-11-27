@@ -27,4 +27,15 @@ const createUser = async (userData) => {
     return await usersModel.createNew(userData);
 };
 
-export const adminService = { updateUserStatus, getUserActivityLogs, createUser };
+const getAllUsers = async () => {
+  const users = await usersModel.getAllUsers();
+  return users;
+};
+
+export const adminService = { 
+  updateUserStatus, 
+  getUserActivityLogs, 
+  createUser, 
+  getAllUsers 
+};
+

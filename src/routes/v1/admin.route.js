@@ -8,6 +8,7 @@ const router = express.Router();
 router.put('/block-user', authenticateJWT, adminController.updateUserStatus);
 router.get('/user-activity-logs', authenticateJWT, adminController.getUserActivityLogs);
 router.post('/create-user', authenticateJWT, adminController.createUser);
+router.get('/users', authenticateJWT, adminController.getAllUsers);
 
 
 router.patch('/:prescriptionId/status', authenticateJWT, prescriptionController.updatePrescriptionStatus);

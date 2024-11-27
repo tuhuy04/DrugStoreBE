@@ -47,7 +47,7 @@ const login = async (req, res) => {
                 error: 'Account is blocked'
             });
         }
-                        
+
         const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) {
             return res.status(HTTP_STATUS_CODE.UNAUTHORIZED).json({
@@ -57,26 +57,35 @@ const login = async (req, res) => {
             });
         }
 
-        const token = jwt.sign(
-            { userId: user.id, name: user.name, role: user.role, status: user.status },
-            process.env.APP_SECRET || 'defaultSecretKey',
-            { expiresIn: '2h' }
-        );
+        // Tạo accessToken và refreshToken
+        const payload = {
+            userId: user.id,
+            name: user.name,
+            role: user.role,
+            email: user.email,
+            status: user.status,
+        };
+
+        const accessToken = jwt.sign(payload, process.env.APP_SECRET || 'defaultSecretKey', {
+            expiresIn: '120m', // Token có hiệu lực trong 15 phút
+        });
+
+        const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET || 'refreshSecretKey', {
+            expiresIn: '7d', // Refresh Token có hiệu lực trong 7 ngày
+        });
+
+        // Lưu thông tin người dùng vào req.user để sử dụng sau
+        req.user = payload;
 
         await usersModel.logUserActivity(user.id, 'login');
 
+        // Trả về accessToken và refreshToken
         res.status(HTTP_STATUS_CODE.OK).json({
             code: HTTP_STATUS_CODE.OK,
             status: 'success',
             data: {
-                message: 'Login successful',
-                token,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                }
+                accessToken,
+                refreshToken,
             }
         });
     } catch (error) {
@@ -88,6 +97,7 @@ const login = async (req, res) => {
         });
     }
 };
+
 
 const logout = async (req, res) => {
     try {
