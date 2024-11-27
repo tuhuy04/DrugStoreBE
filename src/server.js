@@ -35,6 +35,7 @@ app.post('/validate-captcha', validateCaptcha);
 // app.get('/', (req, res) => {
 //   res.send('Hello, Server is running!');
 // });
+app.use('/uploads', express.static('uploads'));
 
 
 // Routes khác

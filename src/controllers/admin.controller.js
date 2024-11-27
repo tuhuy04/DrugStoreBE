@@ -98,5 +98,29 @@ const createUser = async (req, res) => {
     });
   }
 };
+const getAllUsers = async (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({
+          code: 403,
+          status: 'fail',
+          error: 'Permission denied'
+      });
+  }
 
-export const adminController = { updateUserStatus, getUserActivityLogs, createUser };
+  try {
+      const users = await adminService.getAllUsers();
+      res.status(200).json({
+          code: 200,
+          status: 'success',
+          data: users
+      });
+  } catch (error) {
+      res.status(500).json({
+          code: 500,
+          status: 'fail',
+          error: 'An error occurred while retrieving users'
+      });
+  }
+};
+
+export const adminController = { updateUserStatus, getUserActivityLogs, createUser, getAllUsers };

@@ -15,7 +15,7 @@ const getAllMedImport = async () => {
     for (let i = 0; i < importMeds.length; i++) {
       const importMedId = importMeds[i].id;
       const [details] = await connection.execute(
-        `SELECT id, medicine_id, quantity, cost_price 
+        `SELECT id, medicine_id, quantity, cost_price
          FROM import_med_detail 
          WHERE import_med_id = ?`,
         [importMedId]
