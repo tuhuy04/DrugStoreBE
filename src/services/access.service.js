@@ -33,4 +33,5 @@ const register = async (userData) => {
 
 export const accessService = {
     register,
+    isnameOrEmailExists,
 };

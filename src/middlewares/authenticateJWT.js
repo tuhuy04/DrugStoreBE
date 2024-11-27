@@ -41,8 +41,12 @@ const authenticateJWT = async (req, res, next) => {
     if (user.status === 0) {
       return res.status(403).json({ message: 'Account is blocked.' });
     }
-
-    req.user = decoded; // Attach user info to request
+      req.user = {
+        userId: decoded.userId,
+        email: user.email, // Attach the email here
+        role: user.role
+      };
+  // Attach user info to request
     next(); // Proceed to the next middleware or route handler
   });
 };

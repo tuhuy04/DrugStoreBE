@@ -173,7 +173,7 @@ const updateUserStatus = async (userId, status) => {
   };
   const logUserActivity = async (userId, activityType) => {
     await pool.query('INSERT INTO user_activity_log (user_id, activity_type) VALUES (?, ?)', [userId, activityType]);
-  };
+  };    
 
 
 
