@@ -20,3 +20,5 @@ export const UPLOAD_FOLDER = "./uploads/";
 
 export const MAX_FILE_SIZE = 1024 * 1024 * 5; 
 
+export const LOCAL_HOST = "http://localhost:8000";
+
