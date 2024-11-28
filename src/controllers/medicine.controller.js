@@ -21,8 +21,9 @@ const medicineController = {
         throw new ValidationError("Image file is required!");
       }
 
-      const relativeImagePath = path.join("uploads", "medicine", file.filename);
+      const relativeImagePath = `uploads/medicine/${file.filename}`;
       medications.image_url = relativeImagePath;
+
 
       console.log("Medication data:", req.body);
 
@@ -40,7 +41,7 @@ const medicineController = {
       const data = req.body;
 
       if (req.file) {
-        data.image_url = path.join("uploads", "medicine", req.file.filename);
+        data.image_url = `uploads/medicine/${req.file.filename}`;
       }
 
       const result = await medicineService.update(id, data);
