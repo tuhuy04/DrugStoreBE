@@ -24,6 +24,9 @@ const { validateUpdateProfile } = usersValidation;
 
 const router = express.Router();
 
+router.get('/profile', authenticateJWT, userProfileController.getProfile);
+
+
 router.put('/profile', authenticateJWT, upload.single('profile_image'), validateUpdateProfile, userProfileController.updateProfile);
 
 export const userProfileRouter = router;

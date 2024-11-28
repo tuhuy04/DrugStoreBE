@@ -10,85 +10,110 @@ import { pool } from '../configs/database.js';
 
 dotenv.config(); 
 
-
 const register = async (req, res) => {
     try {
         const userId = await accessService.register(req.body);
-        res.status(HTTP_STATUS_CODE.CREATED).send({ message: 'User registered successfully', userId });
+        res.status(HTTP_STATUS_CODE.CREATED).json({
+            code: HTTP_STATUS_CODE.CREATED,
+            status: 'success',
+            data: { message: 'User registered successfully', userId }
+        });
     } catch (error) {
-        if (error.message === 'name or Email already existed') {
-            return res.status(HTTP_STATUS_CODE.BAD_REQUEST).send({
-                error: error.message,
-            });
-        }
-        res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).send({
-            error: new Error(error).message,
+        res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
+            code: HTTP_STATUS_CODE.BAD_REQUEST,
+            status: 'fail',
+            error: error.message === 'name or Email already existed' ? error.message : 'Registration error'
         });
     }
 };
 
-const login = async (req, res, next ) => {
+const login = async (req, res) => {
     const { identifier, password } = req.body;
 
     try {
         const user = await usersModel.getByEmailOrUsername(identifier);
-        // Check the actual type and value
         if (!user) {
-            return res.status(HTTP_STATUS_CODE.UNAUTHORIZED).json({ message: 'User not found' });
+            return res.status(HTTP_STATUS_CODE.UNAUTHORIZED).json({
+                code: HTTP_STATUS_CODE.UNAUTHORIZED,
+                status: 'fail',
+                error: 'User not found'
+            });
         }
 
         if (user.status === 0) {
-            return res.status(HTTP_STATUS_CODE.FORBIDDEN).json({ message: 'Account is blocked' });
+            return res.status(HTTP_STATUS_CODE.FORBIDDEN).json({
+                code: HTTP_STATUS_CODE.FORBIDDEN,
+                status: 'fail',
+                error: 'Account is blocked'
+            });
         }
-                        
+
         const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) {
-            return res.status(HTTP_STATUS_CODE.UNAUTHORIZED).json({ message: 'Invalid password' });
+            return res.status(HTTP_STATUS_CODE.UNAUTHORIZED).json({
+                code: HTTP_STATUS_CODE.UNAUTHORIZED,
+                status: 'fail',
+                error: 'Invalid password'
+            });
         }
 
-        const secret = process.env.APP_SECRET || 'defaultSecretKey';
-        const token = jwt.sign(
-            { userId: user.id, name: user.name, role: user.role, status: user.status },
-            secret,
-            { expiresIn: '2h' }
-        );
+        // Tạo accessToken và refreshToken
+        const payload = {
+            userId: user.id,
+            name: user.name,
+            role: user.role,
+            email: user.email,
+            status: user.status,
+        };
 
-        // Use usersModel to log user activity
+        const accessToken = jwt.sign(payload, process.env.APP_SECRET || 'defaultSecretKey', {
+            expiresIn: '120m', // Token có hiệu lực trong 15 phút
+        });
+
+        const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET || 'refreshSecretKey', {
+            expiresIn: '7d', // Refresh Token có hiệu lực trong 7 ngày
+        });
+
+        // Lưu thông tin người dùng vào req.user để sử dụng sau
+        req.user = payload;
+
         await usersModel.logUserActivity(user.id, 'login');
 
+        // Trả về accessToken và refreshToken
         res.status(HTTP_STATUS_CODE.OK).json({
-            message: 'Login successful',
-            token: token,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role
+            code: HTTP_STATUS_CODE.OK,
+            status: 'success',
+            data: {
+                accessToken,
+                refreshToken,
             }
         });
     } catch (error) {
         console.error('Login error:', error);
         res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).json({
-            message: error.message || 'An error occurred during login.'
+            code: HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR,
+            status: 'fail',
+            error: error.message || 'An error occurred during login.'
         });
     }
 };
 
 
-
 const logout = async (req, res) => {
     try {
         const { userId } = req.user;
-
         await usersModel.logUserActivity(userId, 'logout');
-
         res.status(HTTP_STATUS_CODE.OK).json({
-            message: 'Logout successful'
+            code: HTTP_STATUS_CODE.OK,
+            status: 'success',
+            data: { message: 'Logout successful' }
         });
     } catch (error) {
         console.error('Logout error:', error);
         res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).json({
-            message: 'An error occurred during logout.'
+            code: HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR,
+            status: 'fail',
+            error: 'An error occurred during logout.'
         });
     }
 };

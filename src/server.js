@@ -7,9 +7,14 @@ import compression from "compression";
 import cors from 'cors';
 import session from 'express-session';
 import { getCaptcha, validateCaptcha } from './controllers/captcha.js';
-
-
+import http from "http"; // Đây là file `express` chính
+import initSocketServer from "../src/middlewares/webSocket.js";
 const app = express();
+
+// Khởi tạo server HTTP
+const server = http.createServer(app);
+// Tích hợp socket.io
+initSocketServer(server);
 
 // Middleware
 app.use(cors());
@@ -27,6 +32,11 @@ app.use(session({
 // Sử dụng các route cho CAPTCHA
 app.get('/captcha', getCaptcha);
 app.post('/validate-captcha', validateCaptcha);
+// app.get('/', (req, res) => {
+//   res.send('Hello, Server is running!');
+// });
+app.use('/uploads', express.static('uploads'));
+
 
 app.use('/uploads', express.static('uploads'));
 

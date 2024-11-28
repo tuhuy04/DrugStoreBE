@@ -11,7 +11,20 @@ const updateUserProfile = async (userId, profileData) => {
     }
 };
 
+const getUserProfile = async (userId) => {
+    try {
+        const user = await usersModel.getById(userId);
+        if (user && user.profile_image && !user.profile_image.startsWith('http')) {
+            user.profile_image = `${process.env.APP_URL || 'http://localhost:8000'}/${user.profile_image}`;
+        }        
+        return user;
+    } catch (error) {
+        throw new Error(error.message);
+    }
+};
 
 export const userProfileService = {
     updateUserProfile,
+    getUserProfile,
 };
+
