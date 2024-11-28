@@ -6,6 +6,7 @@ import {
   ConflictError,
   AppError,
 } from "../utilities/errors.js";
+import { LOCAL_HOST } from "../utilities/constants.js";
 
 
 const medicineModel = {
@@ -188,15 +189,36 @@ const medicineModel = {
     const connection = await pool.getConnection();
     try {
       const [rows] = await connection.execute(
-        "SELECT * FROM medicine WHERE id = ?",
+        `SELECT 
+           m.id,
+           m.name,
+           mc.category_name AS category,
+           s.name AS supplier,
+           m.description,
+           m.quantity,
+           m.unit,
+           m.cost_price,
+           m.selling_price,
+           m.image_url,
+           m.created_at,
+           m.updated_at
+         FROM medicine m
+         LEFT JOIN medicine_category mc ON m.category_id = mc.id
+         LEFT JOIN supplier s ON m.supplier_id = s.id
+         WHERE m.id = ?`,
         [id]
       );
-
+  
       if (rows.length === 0) {
         throw new NotFoundError("Medicine not found");
       }
-
-      return rows[0];
+  
+      const medicine = rows[0];
+      if (medicine.image_url) {
+        medicine.image_url = `${LOCAL_HOST}/${medicine.image_url}`;
+      }
+  
+      return medicine;
     } catch (error) {
       if (error instanceof AppError) throw error;
       throw new AppError(
@@ -207,13 +229,38 @@ const medicineModel = {
       connection.release();
     }
   },
+  
+  
 
   getAllMed: async () => {
     const connection = await pool.getConnection();
     try {
       const [rows] = await connection.execute(
-        "SELECT * FROM medicine ORDER BY updated_at DESC"
+        `SELECT 
+           m.id,
+           m.name,
+           mc.category_name AS category,
+           s.name AS supplier,
+           m.description,
+           m.quantity,
+           m.unit,
+           m.cost_price,
+           m.selling_price,
+           m.image_url,
+           m.created_at,
+           m.updated_at
+         FROM medicine m
+         LEFT JOIN medicine_category mc ON m.category_id = mc.id
+         LEFT JOIN supplier s ON m.supplier_id = s.id
+         ORDER BY m.updated_at DESC`
       );
+  
+      rows.forEach(medicine => {
+        if (medicine.image_url) {
+          medicine.image_url = `${LOCAL_HOST}/${medicine.image_url}`;
+        }
+      });
+  
       return rows;
     } catch (error) {
       throw new AppError(
@@ -224,7 +271,8 @@ const medicineModel = {
       connection.release();
     }
   },
-
+  
+  
   deleteMed: async (id) => {
     const connection = await pool.getConnection();
     try {
@@ -313,18 +361,20 @@ const medicineModel = {
         HTTP_STATUS_CODE.BAD_REQUEST
       );
     }
-
+  
     const connection = await pool.getConnection();
     try {
       const [rows] = await connection.execute(
         `SELECT * 
-              FROM medicine 
-              WHERE name LIKE ?`,
+          FROM medicine 
+          WHERE name LIKE ?`,
         [`%${keyword}%`]
       );
+      
       if (rows.length === 0) {
-        throw new NotFoundError("No medicine found matching the keyword");
+        return [];  
       }
+  
       return rows;
     } catch (error) {
       if (error instanceof AppError) {
@@ -337,7 +387,8 @@ const medicineModel = {
     } finally {
       connection.release();
     }
-  },
+  }
+  
 };
 
 export { medicineModel };

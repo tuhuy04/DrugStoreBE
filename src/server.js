@@ -28,6 +28,8 @@ app.use(session({
 app.get('/captcha', getCaptcha);
 app.post('/validate-captcha', validateCaptcha);
 
+app.use('/uploads', express.static('uploads'));
+
 // Routes khác
 app.use("/v1", apiV1);
 
