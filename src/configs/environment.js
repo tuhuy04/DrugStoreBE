@@ -3,8 +3,8 @@ dotenv.config(); // Nếu `.env` nằm ngoài thư mục hiện tại
 
 
 export const env = {
-  APP_PORT: process.env.APP_PORT,
-  APP_HOST: process.env.APP_HOST,
+  APP_PORT: process.env.APP_PORT || 8000,
+  APP_HOST: process.env.APP_HOST || "localhost",
 
   //   DB_USER: process.env.DB_USER ,
   //   DB_PASSWORD: process.env.DB_PASSWORD ,
