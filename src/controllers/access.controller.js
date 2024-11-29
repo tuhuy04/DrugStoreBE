@@ -67,13 +67,13 @@ const login = async (req, res) => {
         };
 
         const accessToken = jwt.sign(payload, process.env.APP_SECRET || 'defaultSecretKey', {
-            expiresIn: '120m', // Token có hiệu lực trong 15 phút
+            expiresIn: '120m', 
         });
 
         const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET || 'refreshSecretKey', {
             expiresIn: '7d', // Refresh Token có hiệu lực trong 7 ngày
         });
-
+    
         // Lưu thông tin người dùng vào req.user để sử dụng sau
         req.user = payload;
 
@@ -97,6 +97,7 @@ const login = async (req, res) => {
         });
     }
 };
+
 
 
 const logout = async (req, res) => {

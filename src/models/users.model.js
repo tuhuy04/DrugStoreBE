@@ -180,7 +180,7 @@ const getById = async (id) => {
     const connection = await pool.getConnection();
     try {
         const [rows] = await connection.execute(
-            'SELECT id, name, email, phone, date_of_birth, profile_image, address, gender FROM user WHERE id = ?',
+            'SELECT id, name, email, phone, date_of_birth, profile_image, address, gender,role FROM user WHERE id = ?',
             [id]
         );
         return rows[0];
