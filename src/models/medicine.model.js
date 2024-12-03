@@ -271,7 +271,7 @@ const medicineModel = {
       connection.release();
     }
   },
-  
+
   
   deleteMed: async (id) => {
     const connection = await pool.getConnection();
