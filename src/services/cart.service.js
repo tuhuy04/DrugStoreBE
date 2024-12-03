@@ -2,7 +2,7 @@ import { cartModel } from "../models/cart.model.js";
 import { cartItemModel } from "../models/cartItem.model.js";
 import { medicineModel } from "../models/medicine.model.js";
 import { prescriptionService } from "./prescription.service.js";
-import { createVnpayPaymentUrl } from "../middlewares/VnPay.js";
+import { createVnpayPaymentUrl } from "../middlewares/vnPay.js";
 const getOrCreateCart = async (userId) => {
   let cart = await cartModel.getActiveCart(userId);
   if (!cart) {
