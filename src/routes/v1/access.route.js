@@ -17,6 +17,8 @@ router.route('/register').post(validateCreateUser, accessController.register);
 //         res.status(400).json({ message: 'CAPTCHA chưa được xác minh hoặc không hợp lệ.' });
 //     }
 // });
+
+// Gửi cả access token và refresh token
 router.route('/login').post(accessController.login);
 
 router.route('/logout').post(authenticateJWT, accessController.logout);
