@@ -66,11 +66,15 @@ const getCategoryById = async (id) => {
   }
 };
 
-const getAllCategories = async () => {
+const getAllCategories = async (req) => {
+  const { keyword, id } = req.query; 
+
   try {
-    return await categoryModel.getAllCategories();
+    const categories = await categoryModel.getAllCategories(keyword, id);
+    
+    return categories;
   } catch (error) {
-    throw new Error(`Error retrieving categories: ${error.message}`);
+    throw new Error(`Error in getCategoriesWithMedicines service: ${error.message}`);
   }
 };
 

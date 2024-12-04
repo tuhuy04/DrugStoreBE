@@ -8,7 +8,6 @@ import {
 } from "../utilities/errors.js";
 import { LOCAL_HOST } from "../utilities/constants.js";
 
-
 const medicineModel = {
   createOrUpdateMed: async (medications) => {
     const connection = await pool.getConnection();
@@ -208,16 +207,16 @@ const medicineModel = {
          WHERE m.id = ?`,
         [id]
       );
-  
+
       if (rows.length === 0) {
         throw new NotFoundError("Medicine not found");
       }
-  
+
       const medicine = rows[0];
       if (medicine.image_url) {
         medicine.image_url = `${LOCAL_HOST}/${medicine.image_url}`;
       }
-  
+
       return medicine;
     } catch (error) {
       if (error instanceof AppError) throw error;
@@ -229,38 +228,107 @@ const medicineModel = {
       connection.release();
     }
   },
-  
-  
 
-  getAllMed: async () => {
+  // getAllMed: async () => {
+  //   const connection = await pool.getConnection();
+  //   try {
+  //     const [rows] = await connection.execute(
+  //       `SELECT
+  //          m.id,
+  //          m.name,
+  //          mc.category_name AS category,
+  //          s.name AS supplier,
+  //          m.description,
+  //          m.quantity,
+  //          m.unit,
+  //          m.cost_price,
+  //          m.selling_price,
+  //          m.image_url,
+  //          m.created_at,
+  //          m.updated_at
+  //        FROM medicine m
+  //        LEFT JOIN medicine_category mc ON m.category_id = mc.id
+  //        LEFT JOIN supplier s ON m.supplier_id = s.id
+  //        ORDER BY m.updated_at DESC`
+  //     );
+
+  //     rows.forEach(medicine => {
+  //       if (medicine.image_url) {
+  //         medicine.image_url = `${LOCAL_HOST}/${medicine.image_url}`;
+  //       }
+  //     });
+
+  //     return rows;
+  //   } catch (error) {
+  //     throw new AppError(
+  //       `Error retrieving medicines: ${error.message}`,
+  //       HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+  //     );
+  //   } finally {
+  //     connection.release();
+  //   }
+  // },
+
+  getAllMed: async (params) => {
+    const { keyword, id, category, supplier, min_price, max_price } = params;
     const connection = await pool.getConnection();
     try {
-      const [rows] = await connection.execute(
-        `SELECT 
-           m.id,
-           m.name,
-           mc.category_name AS category,
-           s.name AS supplier,
-           m.description,
-           m.quantity,
-           m.unit,
-           m.cost_price,
-           m.selling_price,
-           m.image_url,
-           m.created_at,
-           m.updated_at
-         FROM medicine m
-         LEFT JOIN medicine_category mc ON m.category_id = mc.id
-         LEFT JOIN supplier s ON m.supplier_id = s.id
-         ORDER BY m.updated_at DESC`
-      );
-  
-      rows.forEach(medicine => {
+      let query = `
+        SELECT 
+          m.id,
+          m.name,
+          mc.category_name AS category,
+          s.name AS supplier,
+          m.description,
+          m.quantity,
+          m.unit,
+          m.cost_price,
+          m.selling_price,
+          m.image_url,
+          m.created_at,
+          m.updated_at
+        FROM medicine m
+        LEFT JOIN medicine_category mc ON m.category_id = mc.id
+        LEFT JOIN supplier s ON m.supplier_id = s.id
+        WHERE 1=1`;
+
+      const queryParams = [];
+
+      if (id) {
+        query += ` AND m.id = ?`;
+        queryParams.push(id);
+      }
+      if (keyword) {
+        query += ` AND (m.name LIKE ? OR m.description LIKE ?)`;
+        queryParams.push(`%${keyword}%`, `%${keyword}%`);
+      }
+      if (category) {
+        query += ` AND mc.category_name LIKE ?`;
+        queryParams.push(`%${category}%`);
+      }
+      if (supplier) {
+        query += ` AND s.name LIKE ?`;
+        queryParams.push(`%${supplier}%`);
+      }
+      if (min_price !== undefined) {
+        query += ` AND m.selling_price >= ?`;
+        queryParams.push(min_price);
+      }
+      if (max_price !== undefined) {
+        query += ` AND m.selling_price <= ?`;
+        queryParams.push(max_price);
+      }
+
+      query += ` ORDER BY m.updated_at DESC`;
+
+      const [rows] = await connection.execute(query, queryParams);
+
+      rows.forEach((medicine) => {
         if (medicine.image_url) {
           medicine.image_url = `${LOCAL_HOST}/${medicine.image_url}`;
         }
       });
-  
+
       return rows;
     } catch (error) {
       throw new AppError(
@@ -272,7 +340,6 @@ const medicineModel = {
     }
   },
 
-  
   deleteMed: async (id) => {
     const connection = await pool.getConnection();
     try {
@@ -361,7 +428,7 @@ const medicineModel = {
         HTTP_STATUS_CODE.BAD_REQUEST
       );
     }
-  
+
     const connection = await pool.getConnection();
     try {
       const [rows] = await connection.execute(
@@ -370,11 +437,11 @@ const medicineModel = {
           WHERE name LIKE ?`,
         [`%${keyword}%`]
       );
-      
+
       if (rows.length === 0) {
-        return [];  
+        return [];
       }
-  
+
       return rows;
     } catch (error) {
       if (error instanceof AppError) {
@@ -388,22 +455,21 @@ const medicineModel = {
       connection.release();
     }
   },
-   getMedicineStock : async (medicineId) => {
+  getMedicineStock: async (medicineId) => {
     const connection = await pool.getConnection();
     try {
-        const [rows] = await connection.execute(
-            'SELECT quantity FROM medicine WHERE id = ?',
-            [medicineId]
-        );
-        if (rows.length === 0) {
-            throw new Error('Medicine not found');
-        }
-        return rows[0].quantity; 
+      const [rows] = await connection.execute(
+        "SELECT quantity FROM medicine WHERE id = ?",
+        [medicineId]
+      );
+      if (rows.length === 0) {
+        throw new Error("Medicine not found");
+      }
+      return rows[0].quantity;
     } finally {
-        connection.release();
+      connection.release();
     }
-  }
+  },
 };
-
 
 export { medicineModel };

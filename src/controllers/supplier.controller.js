@@ -53,10 +53,11 @@ const getSupplierById = async (req, res) => {
 
 const getAllSuppliers = async (req, res) => {
   try {
-    const result = await supplierService.getAllSuppliers();
+    const result = await supplierService.getAllSuppliers(req);
+    
     sendSuccessResponse(res, result);
   } catch (error) {
-    console.error("Error in getAllSuppliers:", error);
+    console.error("Error in getSuppliersWithMedicines:", error);
     sendErrorResponse(res, error);
   }
 };

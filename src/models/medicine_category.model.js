@@ -2,6 +2,7 @@ import { pool } from "../configs/database.js";
 import { ConflictError, NotFoundError } from "../utilities/errors.js";
 import { HTTP_STATUS_CODE } from "../utilities/constants.js";
 import { AppError } from "../utilities/errors.js";
+import { LOCAL_HOST } from "../utilities/constants.js";
 
 const addCategory = async (category_name) => {
   const connection = await pool.getConnection();
@@ -114,17 +115,83 @@ const getCategoryById = async (id) => {
   }
 };
 
-const getAllCategories = async () => {
+const getAllCategories = async (keyword, id) => {
   const connection = await pool.getConnection();
+  
   try {
-    const [result] = await connection.execute(
-      "SELECT * FROM medicine_category"
-    );
-    return result;
+    // Xây dựng câu truy vấn với các điều kiện tìm kiếm
+    let query = `
+      SELECT 
+        mc.id AS category_id,
+        mc.category_name,
+        m.id AS medicine_id,
+        m.name AS medicine_name,
+        m.description,
+        m.quantity,
+        m.unit,
+        m.cost_price,
+        m.selling_price,
+        m.image_url,
+        m.created_at,
+        m.updated_at
+      FROM medicine_category mc
+      LEFT JOIN medicine m ON m.category_id = mc.id
+    `;
+    
+    let conditions = [];
+    
+    if (keyword) {
+      conditions.push(`mc.category_name LIKE '%${keyword}%' OR m.name LIKE '%${keyword}%'`);
+    }
+    
+    if (id) {
+      conditions.push(`mc.id = ${id}`);
+    }
+    
+    if (conditions.length > 0) {
+      query += ` WHERE ` + conditions.join(' AND ');
+    }
+
+    query += ` ORDER BY mc.category_name, m.updated_at DESC`;
+
+    // Thực thi câu truy vấn
+    const [rows] = await connection.execute(query);
+
+    // Chuyển đổi kết quả thành cấu trúc mong muốn
+    const categories = [];
+    rows.forEach((row) => {
+      let category = categories.find(c => c.category_id === row.category_id);
+      
+      if (!category) {
+        category = {
+          category_id: row.category_id,
+          category_name: row.category_name,
+          medicines: []
+        };
+        categories.push(category);
+      }
+
+      if (row.medicine_id) {
+        category.medicines.push({
+          medicine_id: row.medicine_id,
+          medicine_name: row.medicine_name,
+          description: row.description,
+          quantity: row.quantity,
+          unit: row.unit,
+          cost_price: row.cost_price,
+          selling_price: row.selling_price,
+          image_url: row.image_url ? `${LOCAL_HOST}/${row.image_url}` : null,
+          created_at: row.created_at,
+          updated_at: row.updated_at
+        });
+      }
+    });
+
+    return categories;
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError(
-      `Error retrieving category: ${error.message}`,
+      `Error retrieving categories with medicines: ${error.message}`,
       HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
     );
   } finally {

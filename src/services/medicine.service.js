@@ -97,8 +97,8 @@ const medicineService = {
     }
   },
 
-  getAll: async () => {
-    return await medicineModel.getAllMed();
+  getAll: async (params) => {
+    return await medicineModel.getAllMed(params); 
   },
 
   checkStock: async () => {

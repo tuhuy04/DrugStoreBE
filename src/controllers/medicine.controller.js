@@ -24,7 +24,6 @@ const medicineController = {
       const relativeImagePath = `uploads/medicine/${file.filename}`;
       medications.image_url = relativeImagePath;
 
-
       console.log("Medication data:", req.body);
 
       const result = await medicineService.createOrUpdate([medications]);
@@ -85,7 +84,20 @@ const medicineController = {
 
   getAllMed: async (req, res) => {
     try {
-      const result = await medicineService.getAll();
+      const { keyword, id, category, supplier, min_price, max_price } =
+        req.query;
+
+      const params = {
+        keyword,
+        id: id ? parseInt(id, 10) : undefined,
+        category,
+        supplier,
+        min_price: min_price ? parseFloat(min_price) : undefined,
+        max_price: max_price ? parseFloat(max_price) : undefined,
+      };
+
+      console.log("Query Params:", params);
+      const result = await medicineService.getAll(params);
       sendSuccessResponse(res, result);
     } catch (error) {
       console.error("Error in getAllMed:", error);
