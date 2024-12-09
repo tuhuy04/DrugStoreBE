@@ -9,9 +9,9 @@ const router = express.Router();
 router.use(authenticateJWT);
 
 router.get('/', cartController.getCart);
-router.post('/add', cartValidation.validateAddToCart, cartController.addToCart);
-router.put('/update', cartValidation.validateUpdateQuantity, cartController.updateItemQuantity);
+router.post('/them', cartValidation.validateAddToCart, cartController.addToCart);
+router.put('/chinh-sua', cartValidation.validateUpdateQuantity, cartController.updateItemQuantity);
 router.delete('/item/:itemId', cartController.removeItem);
-router.get('/checkout', cartController.checkout);
+router.get('/thanh-toan', cartController.checkout);
 
 export const cartRouter = router;
