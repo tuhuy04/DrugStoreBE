@@ -4,14 +4,6 @@ import { adminService } from '../services/admin.service.js';
 const updateUserStatus = async (req, res) => {
   const { userId, status } = req.body;
 
-  if (req.user.role !== 'ADMIN') {
-      return res.status(403).json({
-          code: 403,
-          status: 'fail',
-          error: 'Permission denied'
-      });
-  }
-
   try {
       const result = await adminService.updateUserStatus(userId, status);
       if (result.affectedRows === 0) {
@@ -37,39 +29,41 @@ const updateUserStatus = async (req, res) => {
 };
 
 const getUserActivityLogs = async (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-      return res.status(403).json({
-          code: 403,
-          status: 'fail',
-          error: 'Permission denied'
-      });
-  }
-
   try {
-      const logs = await adminService.getUserActivityLogs();
-      res.status(200).json({
-          code: 200,
-          status: 'success',
-          data: { logs }
-      });
+    // Đặt giá trị mặc định cho page và pageSize
+    let { page = 1, pageSize = 10, keyword = '' } = req.query;
+
+   
+    page = Math.max(1, Number(page)); // Ít nhất là 1
+    pageSize = Math.max(1, Number(pageSize)); // Ít nhất là 1
+
+    const { logs, totalRecords } = await adminService.getUserActivityLogs(page, pageSize, keyword); // Gọi service
+
+    const totalPages = Math.ceil(totalRecords / pageSize); // Tính tổng số trang
+
+    res.status(200).json({
+      code: 200,
+      status: 'success',
+      data: {
+        logs,
+        page,
+        pageSize,
+        totalRecords,
+        totalPages,
+      },
+    });
   } catch (error) {
-      res.status(500).json({
-          code: 500,
-          status: 'fail',
-          error: 'An error occurred while retrieving activity logs'
-      });
+    res.status(500).json({
+      code: 500,
+      status: 'fail',
+      error: 'An error occurred while retrieving activity logs',
+    });
   }
 };
 
+
+
 const createUser = async (req, res) => {
-  // Kiểm tra quyền truy cập của admin
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({
-      code: 403,
-      status: 'fail',
-      error: 'Permission denied'
-    });
-  }
 
   const { name, email, password, phone, address } = req.body;
 
@@ -98,29 +92,41 @@ const createUser = async (req, res) => {
     });
   }
 };
-const getAllUsers = async (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-      return res.status(403).json({
-          code: 403,
-          status: 'fail',
-          error: 'Permission denied'
-      });
-  }
 
+const getAllUsers = async (req, res) => {
   try {
-      const users = await adminService.getAllUsers();
-      res.status(200).json({
-          code: 200,
-          status: 'success',
-          data: users
-      });
+    // Lấy giá trị page, pageSize và keyword từ query, đặt giá trị mặc định
+    let { page = 1, pageSize = 10, keyword = '' } = req.query;
+
+    page = Math.max(1, Number(page)); // Ít nhất là 1
+    pageSize = Math.max(1, Number(pageSize)); // Ít nhất là 1
+
+    // Gọi service để lấy dữ liệu
+    const { users, totalRecords } = await adminService.getAllUsers(page, pageSize, keyword);
+
+    // Tính tổng số trang
+    const totalPages = Math.ceil(totalRecords / pageSize);
+
+    res.status(200).json({
+      code: 200,
+      status: 'success',
+      data: {
+        users,
+        page,
+        pageSize,
+        totalRecords,
+        totalPages,
+      },
+    });
   } catch (error) {
-      res.status(500).json({
-          code: 500,
-          status: 'fail',
-          error: 'An error occurred while retrieving users'
-      });
+    res.status(500).json({
+      code: 500,
+      status: 'fail',
+      error: 'An error occurred while retrieving users',
+    });
   }
 };
+
+
 
 export const adminController = { updateUserStatus, getUserActivityLogs, createUser, getAllUsers };
