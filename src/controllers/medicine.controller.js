@@ -2,6 +2,7 @@ import { medicineService } from "../services/medicine.service.js";
 import {
   sendSuccessResponse,
   sendErrorResponse,
+  sendSuccessResponseWithCount
 } from "../helpers/response.helper.js";
 import { HTTP_STATUS_CODE } from "../utilities/constants.js";
 import { AppError } from "../utilities/errors.js";
@@ -23,7 +24,6 @@ const medicineController = {
 
       const relativeImagePath = `uploads/medicine/${file.filename}`;
       medications.image_url = relativeImagePath;
-
 
       console.log("Medication data:", req.body);
 
@@ -85,13 +85,31 @@ const medicineController = {
 
   getAllMed: async (req, res) => {
     try {
-      const result = await medicineService.getAll();
-      sendSuccessResponse(res, result);
-    } catch (error) {
+      const { keyword, id, category, supplier, min_price, max_price, page = 1, pageSize = 10 } = req.query;
+
+      const params = {
+          keyword,
+          id: id ? parseInt(id, 10) : undefined,
+          category,
+          supplier,
+          min_price: min_price ? parseFloat(min_price) : undefined,
+          max_price: max_price ? parseFloat(max_price) : undefined,
+          page: parseInt(page, 10),
+          pageSize: parseInt(pageSize, 10),
+      };
+
+      const { totalRecord, rows } = await medicineService.getAll(params);
+
+      sendSuccessResponseWithCount(res, {
+          totalRecord,
+          data: rows, 
+      });
+  } catch (error) {
       console.error("Error in getAllMed:", error);
       sendErrorResponse(res, error);
-    }
+  }
   },
+
 
   sortByDate: async (req, res) => {
     try {

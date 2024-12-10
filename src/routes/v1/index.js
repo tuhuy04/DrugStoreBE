@@ -16,14 +16,14 @@ const router = express.Router();
 // Định nghĩa route cho các module khác nhau
 router.use('/boards', boardsRouter);
 router.use('/auth', accessRouter);
-router.use('/medicine', medicineRouter);
-router.use('/category', categoryRouter);
-router.use('/supplier', supplierRouter);
+router.use('/thuoc', medicineRouter);
+router.use('/danh-muc-san-pham', categoryRouter);
+router.use('/nha-cung-cap', supplierRouter);
 router.use('/user', userProfileRouter); 
 router.use('/password', userPasswordRouter);
 router.use('/admin', adminRouter);
 router.use('/cart', cartRouter);
 router.use('/chat', chatRouter);
-router.use("/import", importMedRouter);
+router.use("/nhap-thuoc", importMedRouter);
 
 export const apiV1 = router;

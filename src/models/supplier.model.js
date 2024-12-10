@@ -2,6 +2,7 @@ import { pool } from "../configs/database.js";
 import { ConflictError, NotFoundError } from "../utilities/errors.js";
 import { HTTP_STATUS_CODE } from "../utilities/constants.js";
 import { AppError } from "../utilities/errors.js";
+import { LOCAL_HOST } from "../utilities/constants.js";
 
 
 const addSupplier = async ({ name, phone, email, location }) => {
@@ -142,17 +143,80 @@ const getSupplierById = async (id) => {
   }
 }
 
-const getAllSuppliers = async () => {
+const getAllSuppliers = async (keyword, id) => {
   const connection = await pool.getConnection();
+  
   try {
-    const [result] = await connection.execute(
-      "SELECT * FROM supplier"
-    );
-    return result;
+    let query = `
+      SELECT 
+        s.id AS supplier_id,
+        s.name AS supplier_name,
+        m.id AS medicine_id,
+        m.name AS medicine_name,
+        m.description,
+        m.quantity,
+        m.unit,
+        m.cost_price,
+        m.selling_price,
+        m.image_url,
+        m.created_at,
+        m.updated_at
+      FROM supplier s
+      LEFT JOIN medicine m ON m.supplier_id = s.id
+    `;
+    
+    let conditions = [];
+    
+    if (keyword) {
+      conditions.push(`s.name LIKE '%${keyword}%' OR m.name LIKE '%${keyword}%'`);
+    }
+    
+    if (id) {
+      conditions.push(`s.id = ${id}`);
+    }
+    
+    if (conditions.length > 0) {
+      query += ` WHERE ` + conditions.join(' AND ');
+    }
+
+    query += ` ORDER BY s.name, m.updated_at DESC`;
+
+    const [rows] = await connection.execute(query);
+
+    const suppliers = [];
+    rows.forEach((row) => {
+      let supplier = suppliers.find(s => s.supplier_id === row.supplier_id);
+      
+      if (!supplier) {
+        supplier = {
+          supplier_id: row.supplier_id,
+          supplier_name: row.supplier_name,
+          medicines: []
+        };
+        suppliers.push(supplier);
+      }
+
+      if (row.medicine_id) {
+        supplier.medicines.push({
+          medicine_id: row.medicine_id,
+          medicine_name: row.medicine_name,
+          description: row.description,
+          quantity: row.quantity,
+          unit: row.unit,
+          cost_price: row.cost_price,
+          selling_price: row.selling_price,
+          image_url: row.image_url ? `${LOCAL_HOST}/${row.image_url}` : null,
+          created_at: row.created_at,
+          updated_at: row.updated_at
+        });
+      }
+    });
+
+    return suppliers;
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError(
-      `Error retrieving suppliers: ${error.message}`,
+      `Error retrieving suppliers with medicines: ${error.message}`,
       HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
     );
   } finally {
