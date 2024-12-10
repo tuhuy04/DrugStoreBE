@@ -6,7 +6,7 @@ const { validateCreateUser } = usersValidation;
 const router = express.Router();
 
 // API đăng ký
-router.route('/register').post(validateCreateUser, accessController.register);
+router.route('/dang-ky').post(validateCreateUser, accessController.register);
 
 // API đăng nhập
 // router.route('/login').post((req, res, next) => {
@@ -19,8 +19,8 @@ router.route('/register').post(validateCreateUser, accessController.register);
 // });
 
 // Gửi cả access token và refresh token
-router.route('/login').post(accessController.login);
+router.route('/dang-nhap').post(accessController.login);
 
-router.route('/logout').post(authenticateJWT, accessController.logout);
+router.route('/dang-xuat').post(authenticateJWT, accessController.logout);
 
 export const accessRouter = router;

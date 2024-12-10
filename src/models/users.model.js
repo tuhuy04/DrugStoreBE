@@ -155,10 +155,14 @@ const updateUserStatus = async (userId, status) => {
   };
   
   // Function to get user activity logs
-  const getUserActivityLogs = async () => {
-    const [logs] = await pool.query('SELECT * FROM user_activity_log ORDER BY activity_time DESC');
+  const getUserActivityLogs = async (limit, offset) => {
+    const [logs] = await pool.query(
+      'SELECT * FROM user_activity_log ORDER BY activity_time DESC LIMIT ? OFFSET ?',
+      [limit, offset]
+    );
     return logs;
   };
+  
   const logUserActivity = async (userId, activityType) => {
     await pool.query('INSERT INTO user_activity_log (user_id, activity_type) VALUES (?, ?)', [userId, activityType]);
   };    
@@ -205,7 +209,7 @@ export const usersModel = {
     updateUserStatus,
     getUserActivityLogs,
     logUserActivity,
-    getAllUsers 
+    getAllUsers
 };
 
 

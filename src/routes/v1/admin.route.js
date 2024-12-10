@@ -3,16 +3,17 @@ import express from 'express';
 import { adminController } from '../../controllers/admin.controller.js';
 import authenticateJWT from '../../middlewares/authenticateJWT.js';
 import { prescriptionController } from '../../controllers/prescription.controller.js';
+import checkAdmin from '../../middlewares/checkAdmin.js';
 const router = express.Router();
 
-router.put('/block-user', authenticateJWT, adminController.updateUserStatus);
-router.get('/user-activity-logs', authenticateJWT, adminController.getUserActivityLogs);
-router.post('/create-user', authenticateJWT, adminController.createUser);
-router.get('/users', authenticateJWT, adminController.getAllUsers);
+router.put('/chan-nguoi-dung', authenticateJWT,checkAdmin , adminController.updateUserStatus);
+router.get('/hoat-dong-nguoi-dung', authenticateJWT,checkAdmin, adminController.getUserActivityLogs);
+router.post('/tao-moi-nguoi-dung', authenticateJWT,checkAdmin, adminController.createUser);
+router.get('/nguoi-dung', authenticateJWT,checkAdmin, adminController.getAllUsers);
 
 
-router.patch('/:prescriptionId/status', authenticateJWT, prescriptionController.updatePrescriptionStatus);
-router.get('/prescriptions', authenticateJWT, prescriptionController.getAllPrescriptions);
+router.patch('/:prescriptionId/status', authenticateJWT,checkAdmin, prescriptionController.updatePrescriptionStatus);
+router.get('/hoa-don', authenticateJWT,checkAdmin, prescriptionController.getAllPrescriptions);
 
 
 export const adminRouter = router;
