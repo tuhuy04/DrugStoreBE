@@ -37,9 +37,6 @@ app.post('/validate-captcha', validateCaptcha);
 // });
 app.use('/uploads', express.static('uploads'));
 
-
-app.use('/uploads', express.static('uploads'));
-
 // Routes khác
 app.use("/v1", apiV1);
 

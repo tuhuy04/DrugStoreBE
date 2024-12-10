@@ -51,7 +51,7 @@ const getCategoryById = async (req, res) => {
 
 const getAllCategories = async (req, res) => {
   try {
-    const result = await categoryService.getAllCategories();
+    const result = await categoryService.getAllCategories(req);
     sendSuccessResponse(res, result);
   } catch (error) {
     console.error("Error in get all category:", error);
