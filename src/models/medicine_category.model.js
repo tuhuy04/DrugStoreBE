@@ -119,7 +119,6 @@ const getAllCategories = async (keyword, id) => {
   const connection = await pool.getConnection();
   
   try {
-    // Xây dựng câu truy vấn với các điều kiện tìm kiếm
     let query = `
       SELECT 
         mc.id AS category_id,
@@ -154,10 +153,8 @@ const getAllCategories = async (keyword, id) => {
 
     query += ` ORDER BY mc.category_name, m.updated_at DESC`;
 
-    // Thực thi câu truy vấn
     const [rows] = await connection.execute(query);
 
-    // Chuyển đổi kết quả thành cấu trúc mong muốn
     const categories = [];
     rows.forEach((row) => {
       let category = categories.find(c => c.category_id === row.category_id);

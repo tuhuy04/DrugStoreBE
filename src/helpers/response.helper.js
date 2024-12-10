@@ -8,6 +8,19 @@ export const sendSuccessResponse = (res, data = {}, statusCode = HTTP_STATUS_COD
   });
 };
 
+export const sendSuccessResponseWithCount = (res, data = {}, statusCode = HTTP_STATUS_CODE.OK) => {
+  const { totalRecord, data: rows } = data;
+
+  const response = {
+      code: statusCode,
+      status: 'success',
+      count: totalRecord, 
+      data: rows,        
+  };
+
+  res.status(statusCode).json(response);
+}; 
+
 export const sendErrorResponse = (res, error) => {
   const statusCode = error.statusCode || HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR;
   
