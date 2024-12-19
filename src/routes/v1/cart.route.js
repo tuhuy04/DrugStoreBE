@@ -5,13 +5,11 @@ import authenticateJWT from '../../middlewares/authenticateJWT.js';
 
 const router = express.Router();
 
-// All cart routes require authentication
-router.use(authenticateJWT);
 
-router.get('/', cartController.getCart);
-router.post('/them', cartValidation.validateAddToCart, cartController.addToCart);
-router.put('/chinh-sua', cartValidation.validateUpdateQuantity, cartController.updateItemQuantity);
-router.delete('/item/:itemId', cartController.removeItem);
-router.get('/thanh-toan', cartController.checkout);
+router.get('/',authenticateJWT, cartController.getCart);
+router.post('/',authenticateJWT, cartValidation.validateAddToCart, cartController.addToCart);
+router.put('/', authenticateJWT,cartValidation.validateUpdateQuantity, cartController.updateItemQuantity);
+router.delete('/:itemId', authenticateJWT, cartController.removeItem);
+router.get('/thanh-toan', authenticateJWT,cartController.checkout);
 
 export const cartRouter = router;

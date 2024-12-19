@@ -5,26 +5,26 @@ const updateUserStatus = async (req, res) => {
   const { userId, status } = req.body;
 
   try {
-      const result = await adminService.updateUserStatus(userId, status);
-      if (result.affectedRows === 0) {
-          return res.status(404).json({
-              code: 404,
-              status: 'fail',
-              error: 'User not found'
-          });
-      }
+    const result = await adminService.updateUserStatus(userId, status);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        code: 404,
+        status: 'fail',
+        error: 'User not found'
+      });
+    }
 
-      res.status(200).json({
-          code: 200,
-          status: 'success',
-          data: { message: `User ${status === '0' ? 'blocked' : 'unblocked'} successfully` }
-      });
+    res.status(200).json({
+      code: 200,
+      status: 'success',
+      data: { message: `User ${status === '0' ? 'locked' : 'unlocked'} successfully` }
+    });
   } catch (error) {
-      res.status(500).json({
-          code: 500,
-          status: 'fail',
-          error: 'An error occurred while updating user status'
-      });
+    res.status(500).json({
+      code: 500,
+      status: 'fail',
+      error: 'An error occurred while updating user status'
+    });
   }
 };
 
@@ -61,10 +61,7 @@ const getUserActivityLogs = async (req, res) => {
   }
 };
 
-
-
 const createUser = async (req, res) => {
-
   const { name, email, password, phone, address } = req.body;
 
   // Kiểm tra dữ liệu đầu vào

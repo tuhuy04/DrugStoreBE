@@ -2,19 +2,19 @@
 
 import { pool } from '../configs/database.js'; 
 
-const createNew = async ({ name, email, password,phone, address }) => {
+const createNew = async ({ name, email, password, phone, address }) => {
     const connection = await pool.getConnection();
     try {
-        const [result] = await connection.execute(
-            'INSERT INTO user (name, email, password, phone, address) VALUES (?, ?, ?, ?, ?)',
-            [name, email, password, phone, address]
-        );
-        
-        return result.insertId; 
+      const [result] = await connection.execute(
+        'INSERT INTO user (name, email, password, phone, address) VALUES (?, ?, ?, ?, ?)',
+        [name, email, password, phone, address]
+      );
+      return result.insertId;
     } finally {
-        connection.release();
+      connection.release();
     }
-};
+  };
+  
 
 const update = async (id, { name, email, password }) => {
     const connection = await pool.getConnection();
