@@ -5,6 +5,7 @@ import authenticateJWT from "../../middlewares/authenticateJWT.js";
 
 const router = express.Router();
 
+router.route("/co-san-pham").get(categoryController.getCategoriesWithProduct);
 router
   .route("/")
   .post(authenticateJWT, categoryController.addCategory)

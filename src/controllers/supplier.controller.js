@@ -3,6 +3,7 @@ import { HTTP_STATUS_CODE } from "../utilities/constants.js";
 import {
   sendErrorResponse,
   sendSuccessResponse,
+  sendSuccessResponseWithCount,
 } from "../helpers/response.helper.js";
 
 const addSupplier = async (req, res) => {
@@ -53,9 +54,18 @@ const getSupplierById = async (req, res) => {
 
 const getAllSuppliers = async (req, res) => {
   try {
-    const result = await supplierService.getAllSuppliers(req);
+    const {keyword, id, page = 1, pageSize = 10} = req.query;
+    const params = {
+      keyword, 
+      id: id ? parseInt(id, 10) : undefined,
+      page: parseInt(page, 10),
+      pageSize: parseInt(pageSize, 10),};
+    const {totalRecord, rows} = await supplierService.getAllSuppliers(params);
     
-    sendSuccessResponse(res, result);
+    sendSuccessResponseWithCount(res, {
+      totalRecord,
+      data: rows
+    });
   } catch (error) {
     console.error("Error in getSuppliersWithMedicines:", error);
     sendErrorResponse(res, error);

@@ -85,12 +85,12 @@ const medicineController = {
 
   getAllMed: async (req, res) => {
     try {
-      const { keyword, id, category, supplier, min_price, max_price, page = 1, pageSize = 10 } = req.query;
+      const { keyword, id, category_id, supplier, min_price, max_price, page = 1, pageSize = 10 } = req.query;
 
       const params = {
           keyword,
           id: id ? parseInt(id, 10) : undefined,
-          category,
+          category_id: category_id ? parseInt(category_id, 10) : undefined,
           supplier,
           min_price: min_price ? parseFloat(min_price) : undefined,
           max_price: max_price ? parseFloat(max_price) : undefined,

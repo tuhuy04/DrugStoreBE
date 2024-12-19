@@ -3,16 +3,17 @@ import { medicineController } from "../../controllers/medicine.controller.js";
 import { medicineValidation } from "../../validations/medicine.validation.js";
 import authenticateJWT from "../../middlewares/authenticateJWT.js";
 import {upload} from "../../middlewares/upload.js";
+import checkAdmin from "../../middlewares/checkAdmin.js";
 
 
 const router = express.Router();
 
-router.get("/check-stock",authenticateJWT, medicineController.checkStock);
+router.get("/check-stock",authenticateJWT, checkAdmin, medicineController.checkStock);
 router.get("/category/:category_name", medicineController.getMedByCategory);
 router.get("/search", medicineController.getMedByName);
 router
   .route("/")
-  .post(authenticateJWT,upload.single("image"), medicineController.createOrUpdateMed)
+  .post(authenticateJWT,checkAdmin, upload.single("image"), medicineController.createOrUpdateMed)
   .get(medicineController.getAllMed);
 
 router

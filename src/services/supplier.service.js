@@ -68,14 +68,10 @@ const getSupplierById = async (id) => {
   }
 };
 
-const getAllSuppliers = async (req) => {
-  const { keyword, id } = req.query; 
-
+const getAllSuppliers = async (params) => {
   try {
-    const suppliers = await supplierModel.getAllSuppliers(keyword, id);
-    
-    return suppliers;
-  } catch (error) {
+    return await supplierModel.getAllSuppliers(params);
+   } catch (error) {
     throw new Error(`Error in getSuppliersWithMedicines service: ${error.message}`);
   }
 };

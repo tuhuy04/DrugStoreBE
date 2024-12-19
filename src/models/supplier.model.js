@@ -143,76 +143,40 @@ const getSupplierById = async (id) => {
   }
 }
 
-const getAllSuppliers = async (keyword, id) => {
+const getAllSuppliers = async (params) => {
+  const { keyword, id, page, pageSize } = params;
   const connection = await pool.getConnection();
   
   try {
-    let query = `
-      SELECT 
-        s.id AS supplier_id,
-        s.name AS supplier_name,
-        m.id AS medicine_id,
-        m.name AS medicine_name,
-        m.description,
-        m.quantity,
-        m.unit,
-        m.cost_price,
-        m.selling_price,
-        m.image_url,
-        m.created_at,
-        m.updated_at
-      FROM supplier s
-      LEFT JOIN medicine m ON m.supplier_id = s.id
-    `;
-    
-    let conditions = [];
-    
+    const conditions = [];
+    const queryParams = [];
+        
     if (keyword) {
-      conditions.push(`s.name LIKE '%${keyword}%' OR m.name LIKE '%${keyword}%'`);
+      conditions.push(`name LIKE ?`);
+      queryParams.push(`%${keyword}%`);
     }
     
     if (id) {
-      conditions.push(`s.id = ${id}`);
+      conditions.push(`id = ?`);
+      queryParams.push(id);
     }
+
+    const countQuery = `SELECT COUNT(*) AS totalRecord 
+                        FROM supplier 
+                        ${conditions.length ? `WHERE ${conditions.join(" AND ")}` : ""}`;
     
-    if (conditions.length > 0) {
-      query += ` WHERE ` + conditions.join(' AND ');
-    }
+    const [countResult] = await connection.execute(countQuery, queryParams);
+    const totalRecord = countResult[0].totalRecord;
 
-    query += ` ORDER BY s.name, m.updated_at DESC`;
+    const offset = (page - 1) * pageSize;
 
-    const [rows] = await connection.execute(query);
+    let query = `SELECT * FROM supplier  
+                ${conditions.length ? `WHERE ${conditions.join(" AND ")}` : ""} 
+                ORDER BY id DESC LIMIT ${pageSize} OFFSET ${offset}`;
 
-    const suppliers = [];
-    rows.forEach((row) => {
-      let supplier = suppliers.find(s => s.supplier_id === row.supplier_id);
-      
-      if (!supplier) {
-        supplier = {
-          supplier_id: row.supplier_id,
-          supplier_name: row.supplier_name,
-          medicines: []
-        };
-        suppliers.push(supplier);
-      }
+    const [rows] = await connection.execute(query, queryParams);
 
-      if (row.medicine_id) {
-        supplier.medicines.push({
-          medicine_id: row.medicine_id,
-          medicine_name: row.medicine_name,
-          description: row.description,
-          quantity: row.quantity,
-          unit: row.unit,
-          cost_price: row.cost_price,
-          selling_price: row.selling_price,
-          image_url: row.image_url ? `${LOCAL_HOST}/${row.image_url}` : null,
-          created_at: row.created_at,
-          updated_at: row.updated_at
-        });
-      }
-    });
-
-    return suppliers;
+    return {totalRecord, rows};
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError(
