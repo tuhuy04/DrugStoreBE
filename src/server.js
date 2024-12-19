@@ -56,7 +56,22 @@ app.use((error, req, res, next) => {
     stack: process.env.NODE_ENV === 'development' ? error.stack : {}
   });
 });
+// app.use((req, res, next) => {
+//   res.header('Access-Control-Allow-Origin', 'http://localhost:4200');
+//   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+//   next();
+// });
+// app.use((req, res, next) => {
+//   res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' http://localhost:8000 data:;");
+//   next();
+// });
 
+const corsOptions = {
+  origin: 'http://localhost:4200', // Địa chỉ của Angular app
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use(cors(corsOptions));
 // Start server
 app.listen(env.APP_PORT, env.APP_HOST, () => {
   console.log(`Server is running at http://${env.APP_HOST}:${env.APP_PORT}`);

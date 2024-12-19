@@ -7,10 +7,14 @@ import {accessService} from './access.service.js';
 const saltRounds = 10; 
 
 const updateUserStatus = async (userId, status) => {
-  const result = await usersModel.updateUserStatus(userId, status);
+  // If status is null, we use MySQL NULL value
+  const statusValue = status === 'null' || status === null ? null : status;
+  const [result] = await pool.query(
+    'UPDATE user SET status = ? WHERE id = ?', 
+    [statusValue, userId]
+  );
   return result;
 };
-
 const getUserActivityLogs = async (page, pageSize, keyword) => {
   const limit = pageSize;
   const offset = (page - 1) * pageSize;

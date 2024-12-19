@@ -10,10 +10,11 @@ const getCart = async (req, res) => {
             data: cart
         });
     } catch (error) {
+        console.error('Error getting cart:', error);
         res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).json({
             code: HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR,
             status: 'fail',
-            error: error.message
+            error: error.message || 'An error occurred while retrieving the cart.'
         });
     }
 };
@@ -29,10 +30,11 @@ const addToCart = async (req, res) => {
             data: updatedCart
         });
     } catch (error) {
-        res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).json({
-            code: HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR,
+        console.error('Error adding item to cart:', error);
+        res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
+            code: HTTP_STATUS_CODE.BAD_REQUEST,
             status: 'fail',
-            error: error.message
+            error: error.message || 'An error occurred while adding item to the cart.'
         });
     }
 };
@@ -48,6 +50,15 @@ const updateItemQuantity = async (req, res) => {
             data: updatedCart
         });
     } catch (error) {
+        // Trả lỗi chi tiết cho người dùng
+        if (error.message.includes("Not enough stock available")) {
+            return res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
+                code: HTTP_STATUS_CODE.BAD_REQUEST,
+                status: 'fail',
+                error: "Không đủ số lượng trong kho"
+            });
+        }
+
         res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).json({
             code: HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR,
             status: 'fail',
@@ -55,6 +66,7 @@ const updateItemQuantity = async (req, res) => {
         });
     }
 };
+
 
 const removeItem = async (req, res) => {
     try {
@@ -67,10 +79,11 @@ const removeItem = async (req, res) => {
             data: updatedCart
         });
     } catch (error) {
-        res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).json({
-            code: HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR,
+        console.error('Error removing item from cart:', error);
+        res.status(HTTP_STATUS_CODE.BAD_REQUEST).json({
+            code: HTTP_STATUS_CODE.BAD_REQUEST,
             status: 'fail',
-            error: error.message
+            error: error.message || 'An error occurred while removing item from the cart.'
         });
     }
 };
@@ -90,10 +103,11 @@ const checkout = async (req, res) => {
             data: { paymentUrl }
         });
     } catch (error) {
+        console.error('Error during checkout:', error);
         res.status(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR).json({
             code: HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR,
             status: 'fail',
-            error: error.message
+            error: error.message || 'An error occurred during checkout.'
         });
     }
 };

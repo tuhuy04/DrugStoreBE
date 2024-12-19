@@ -9,27 +9,36 @@ const saltRounds = 10;
 const isnameOrEmailExists = async (name, email) => {
     const connection = await pool.getConnection();
     try {
-        const [rows] = await connection.execute(
-            'SELECT * FROM user WHERE name = ? OR email = ?',
-            [name, email]
-        );
-        return rows.length > 0;
+      const [rows] = await connection.execute(
+        'SELECT 1 FROM user WHERE name = ? OR email = ?',
+        [name, email]
+      );
+      return rows.length > 0;
     } finally {
-        connection.release();
+      connection.release();
     }
-};
-
-const register = async (userData) => {
-    const { name, email } = userData;
-    const exists = await isnameOrEmailExists(name, email);
-    if (exists) {
-        throw new Error('name or Email already existed');
+  };
+  
+  const register = async (userData) => {
+    const { name, email, password, phone, address } = userData;
+  
+    // Kiểm tra tồn tại
+    if (await isnameOrEmailExists(name, email)) {
+      throw new Error('Name or Email already exists');
     }
-
-    const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
-    userData.password = hashedPassword;
-    return await usersModel.createNew(userData);
-};
+  
+    // Mã hóa mật khẩu
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+  
+    // Tạo người dùng mới
+    return await usersModel.createNew({
+      name,
+      email,
+      password: hashedPassword,
+      phone,
+      address,
+    });
+  };
 
 export const accessService = {
     register,

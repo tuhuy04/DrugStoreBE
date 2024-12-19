@@ -6,6 +6,7 @@ import authenticateJWT from '../../middlewares/authenticateJWT.js';
 import { usersValidation } from '../../validations/users.validation.js';
 import multer from 'multer';
 import path from 'path';
+import checkAdmin from '../../middlewares/checkAdmin.js';
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
