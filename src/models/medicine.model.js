@@ -233,7 +233,7 @@ const medicineModel = {
     const {
       keyword,
       id,
-      category,
+      category_id,
       supplier,
       min_price,
       max_price,
@@ -255,9 +255,9 @@ const medicineModel = {
         conditions.push("(m.name LIKE ? OR m.description LIKE ?)");
         queryParams.push(`%${keyword}%`, `%${keyword}%`);
       }
-      if (category) {
-        conditions.push("mc.category_name LIKE ?");
-        queryParams.push(`%${category}%`);
+      if (category_id) {
+        conditions.push("mc.id = ?");
+        queryParams.push(category_id);
       }
       if (supplier) {
         conditions.push("s.name LIKE ?");
