@@ -115,76 +115,47 @@ const getCategoryById = async (id) => {
   }
 };
 
-const getAllCategories = async (keyword, id) => {
+const getAllCategories = async (params) => {
+  const { keyword, id, page, pageSize } = params;
+
   const connection = await pool.getConnection();
-  
+
   try {
+    const conditions = [];
+    const queryParams = [];
+
+    if (keyword) {
+      conditions.push("category_name LIKE ?");
+      queryParams.push(`%${keyword}%`);
+    }
+
+    if (id) {
+      conditions.push("id = ?");
+      queryParams.push(id);
+    }
+
+    const countQuery = `
+      SELECT COUNT(*) AS totalRecord
+      FROM medicine_category
+      ${conditions.length ? `WHERE ${conditions.join(" AND ")}` : ""}
+    `;
+    const [countResult] = await connection.execute(countQuery, queryParams);
+    const totalRecord = countResult[0].totalRecord;
+
+    const offset = (page - 1) * pageSize;
+
     let query = `
-      SELECT 
-        mc.id AS category_id,
-        mc.category_name,
-        m.id AS medicine_id,
-        m.name AS medicine_name,
-        m.description,
-        m.quantity,
-        m.unit,
-        m.cost_price,
-        m.selling_price,
-        m.image_url,
-        m.created_at,
-        m.updated_at
-      FROM medicine_category mc
-      LEFT JOIN medicine m ON m.category_id = mc.id
+      SELECT * FROM medicine_category
+      ${conditions.length ? `WHERE ${conditions.join(" AND ")}` : ""}
+      ORDER BY id DESC LIMIT ${pageSize} OFFSET ${offset}
     `;
     
-    let conditions = [];
-    
-    if (keyword) {
-      conditions.push(`mc.category_name LIKE '%${keyword}%' OR m.name LIKE '%${keyword}%'`);
-    }
-    
-    if (id) {
-      conditions.push(`mc.id = ${id}`);
-    }
-    
-    if (conditions.length > 0) {
-      query += ` WHERE ` + conditions.join(' AND ');
-    }
+    const [rows] = await connection.execute(query, queryParams);
 
-    query += ` ORDER BY mc.category_name, m.updated_at DESC`;
-
-    const [rows] = await connection.execute(query);
-
-    const categories = [];
-    rows.forEach((row) => {
-      let category = categories.find(c => c.category_id === row.category_id);
-      
-      if (!category) {
-        category = {
-          category_id: row.category_id,
-          category_name: row.category_name,
-          medicines: []
-        };
-        categories.push(category);
-      }
-
-      if (row.medicine_id) {
-        category.medicines.push({
-          medicine_id: row.medicine_id,
-          medicine_name: row.medicine_name,
-          description: row.description,
-          quantity: row.quantity,
-          unit: row.unit,
-          cost_price: row.cost_price,
-          selling_price: row.selling_price,
-          image_url: row.image_url ? `${LOCAL_HOST}/${row.image_url}` : null,
-          created_at: row.created_at,
-          updated_at: row.updated_at
-        });
-      }
-    });
-
-    return categories;
+    return {
+      totalRecord, 
+      rows, 
+    };
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError(
@@ -195,6 +166,29 @@ const getAllCategories = async (keyword, id) => {
     connection.release();
   }
 };
+
+const getAllCategoryWithProduct = async () => {
+  const connection = await pool.getConnection();
+  try {
+    const [result] = await connection.execute(
+      `SELECT mc.id, mc.category_name, COUNT(m.id) AS total_medicine 
+      FROM medicine_category mc
+      LEFT JOIN medicine m ON mc.id = m.category_id
+      GROUP BY mc.id
+      HAVING total_medicine > 0`
+    );
+    return result;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(
+      `Error retrieving categories with medicines: ${error.message}`,
+      HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR
+    );
+  } finally {
+    connection.release();
+  }
+}
+
 
 const checkCategoryExists = async (category_name) => {
   const connection = await pool.getConnection();
@@ -234,4 +228,5 @@ export const categoryModel = {
   deleteCategory,
   getCategoryById,
   getAllCategories,
+  getAllCategoryWithProduct,
 };

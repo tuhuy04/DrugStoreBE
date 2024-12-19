@@ -66,17 +66,21 @@ const getCategoryById = async (id) => {
   }
 };
 
-const getAllCategories = async (req) => {
-  const { keyword, id } = req.query; 
-
+const getAllCategories = async (params) => {
   try {
-    const categories = await categoryModel.getAllCategories(keyword, id);
-    
-    return categories;
+    return await categoryModel.getAllCategories(params);
   } catch (error) {
     throw new Error(`Error in getCategoriesWithMedicines service: ${error.message}`);
   }
 };
+
+const getAllCategoryWithProduct = async () => {
+  try {
+    return await categoryModel.getAllCategoryWithProduct();
+  } catch (error) {
+    throw new Error(`Error in getCategoriesWithMedicines service: ${error.message}`);
+  }
+}
 
 export const categoryService = {
   addCategory,
@@ -84,4 +88,5 @@ export const categoryService = {
   deleteCategory,
   getCategoryById,
   getAllCategories,
+  getAllCategoryWithProduct
 };
