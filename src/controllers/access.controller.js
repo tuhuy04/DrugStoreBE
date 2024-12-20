@@ -80,6 +80,8 @@ const login = async (req, res) => {
     await usersModel.logUserActivity(user.id, 'login');
 
     res.status(200).json({
+      code: 200,
+      status: 'success',
       accessToken,
       refreshToken,
     });

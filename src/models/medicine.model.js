@@ -48,8 +48,8 @@ const medicineModel = {
           !quantity ||
           !unit ||
           !cost_price ||
-          !selling_price ||
-          !image_url
+          !selling_price
+          || !image_url
         ) {
           throw new ValidationError(
             "All fields are required and must not be undefined."
@@ -87,8 +87,9 @@ const medicineModel = {
         } else {
           const [result] = await connection.execute(
             `INSERT INTO medicine (name, category_id, supplier_id, description, 
-              quantity, unit, cost_price, selling_price, image_url, created_at, updated_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+              quantity, unit, cost_price, selling_price,  
+              created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
             [
               name,
               category_id,
@@ -139,39 +140,36 @@ const medicineModel = {
   updateMed: async (id, data) => {
     const connection = await pool.getConnection();
     try {
+      // Kiểm tra tên thuốc trùng lặp
       const [existingMed] = await connection.query(
         "SELECT id FROM medicine WHERE name = ? AND id != ?",
         [data.name, id]
       );
       if (existingMed.length > 0) {
-        throw new ConflictError(
-          "A medicine with the same name already exists."
-        );
+        throw new ConflictError("A medicine with the same name already exists.");
       }
-
+  
+      // Tạo mảng chứa cặp trường và giá trị
+      const fields = [];
+      const values = [];
+      for (const [key, value] of Object.entries(data)) {
+        if (value !== undefined) {
+          fields.push(`${key} = ?`);
+          values.push(value);
+        }
+      }
+      values.push(id); // Thêm `id` vào cuối mảng cho câu WHERE
+  
+      // Chạy câu SQL chỉ với các trường cần cập nhật
       const [result] = await connection.execute(
-        `UPDATE medicine SET 
-        name = ?, category_id = ?, supplier_id = ?, description = ?, 
-        unit = ?, cost_price = ?, selling_price = ?, image_url = ?, 
-        updated_at = NOW()
-      WHERE id = ?`,
-        [
-          data.name,
-          data.category_id,
-          data.supplier_id,
-          data.description,
-          data.unit,
-          data.cost_price,
-          data.selling_price,
-          data.image_url,
-          id,
-        ]
+        `UPDATE medicine SET ${fields.join(", ")}, updated_at = NOW() WHERE id = ?`,
+        values
       );
-
+  
       if (result.affectedRows === 0) {
         throw new NotFoundError("Medicine not found");
       }
-
+  
       return { message: "Medicine updated successfully" };
     } catch (error) {
       if (error instanceof AppError) throw error;

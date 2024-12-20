@@ -13,13 +13,13 @@ router.get("/category/:category_name", medicineController.getMedByCategory);
 router.get("/search", medicineController.getMedByName);
 router
   .route("/")
-  .post(authenticateJWT,checkAdmin, upload.single("image"), medicineController.createOrUpdateMed)
+  .post(medicineController.createOrUpdateMed)
   .get(medicineController.getAllMed);
 
 router
   .route("/:id")
-  .put(authenticateJWT, upload.single("image"), medicineController.update)
-  .delete(authenticateJWT, medicineController.deleteMed)
+  .put(authenticateJWT, checkAdmin, upload.single("image"), medicineController.update)
+  .delete(authenticateJWT, checkAdmin, medicineController.deleteMed)
   .get(medicineController.getMed);
 
 

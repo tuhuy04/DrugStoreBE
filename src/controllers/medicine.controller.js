@@ -15,15 +15,15 @@ const __dirname = path.dirname(__filename);
 const medicineController = {
   createOrUpdateMed: async (req, res) => {
     try {
-      const file = req.file;
+      // const file = req.file;
       const medications = req.body;
 
-      if (!file) {
-        throw new ValidationError("Image file is required!");
-      }
+      // if (!file) {
+      //   throw new ValidationError("Image file is required!");
+      // }
 
-      const relativeImagePath = `uploads/medicine/${file.filename}`;
-      medications.image_url = relativeImagePath;
+      // const relativeImagePath = `uploads/medicine/${file.filename}`;
+      medications.image_url = `uploads/medicine/sale-product.jpg`;
 
       console.log("Medication data:", req.body);
 
@@ -39,16 +39,21 @@ const medicineController = {
     try {
       const id = req.params.id;
       const data = req.body;
-
+  
+      // Nếu có upload ảnh mới
       if (req.file) {
         data.image_url = `uploads/medicine/${req.file.filename}`;
       }
-
+  
+      // Gọi service để xử lý update
       const result = await medicineService.update(id, data);
+  
+      // Gửi phản hồi thành công
       sendSuccessResponse(res, result);
     } catch (error) {
       console.error("Error in update:", error);
-
+  
+      // Nếu có lỗi, xóa ảnh đã upload
       if (req.file && req.file.path) {
         try {
           fs.unlinkSync(req.file.path);
@@ -60,6 +65,7 @@ const medicineController = {
       sendErrorResponse(res, error);
     }
   },
+  
 
   deleteMed: async (req, res) => {
     try {

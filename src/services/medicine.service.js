@@ -27,34 +27,34 @@ const medicineService = {
       if (!existingMedicine) {
         throw new NotFoundError("Medicine not found");
       }
-
+  
+      // Kiểm tra nếu không có dữ liệu mới
       if (!Object.keys(data).length) {
-        throw new ValidationError(
-          "At least one field must be provided for update"
-        );
+        throw new ValidationError("At least one field must be provided for update");
       }
-
-      let updatedImageUrl = existingMedicine.image_url;
-
-      if (data.image_url) {
-        const oldImagePath = path.resolve(
-          __dirname,
-          "../uploads/medicine",
-          path.basename(existingMedicine.image_url)
-        );
-
-        if (fs.existsSync(oldImagePath)) {
-          try {
-            fs.unlinkSync(oldImagePath);
-            console.log("Old image deleted:", oldImagePath);
-          } catch (error) {
-            console.error("Error deleting old image:", error);
-          }
-        }
-
-        updatedImageUrl = data.image_url.replace(/\\/g, "/");
-      }
-
+  
+      // // Nếu có ảnh mới, xóa ảnh cũ
+      // let updatedImageUrl = existingMedicine.image_url;
+      // if (data.image_url) {
+      //   const oldImagePath = path.resolve(
+      //     __dirname,
+      //     "../uploads/medicine",
+      //     path.basename(existingMedicine.image_url)
+      //   );
+  
+      //   if (fs.existsSync(oldImagePath)) {
+      //     try {
+      //       fs.unlinkSync(oldImagePath);
+      //       console.log("Old image deleted:", oldImagePath);
+      //     } catch (error) {
+      //       console.error("Error deleting old image:", error);
+      //     }
+      //   }
+  
+      //   updatedImageUrl = data.image_url.replace(/\\/g, "/");
+      // }
+  
+      // Tạo đối tượng cập nhật
       const updatedData = {
         name: data.name || existingMedicine.name,
         category_id: data.category_id || existingMedicine.category_id,
@@ -63,11 +63,12 @@ const medicineService = {
         unit: data.unit || existingMedicine.unit,
         cost_price: data.cost_price || existingMedicine.cost_price,
         selling_price: data.selling_price || existingMedicine.selling_price,
-        image_url: updatedImageUrl,
+        // image_url: updatedImageUrl,
       };
-
+  
+      // Gọi model để cập nhật cơ sở dữ liệu
       const result = await medicineModel.updateMed(id, updatedData);
-
+  
       return {
         message: "Medicine updated successfully",
         oldImageUrl: existingMedicine.image_url,
@@ -80,7 +81,7 @@ const medicineService = {
       );
     }
   },
-
+  
   deleteById: async (id) => {
     return await medicineModel.deleteMed(id);
   },
